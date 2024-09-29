@@ -213,3 +213,26 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
   }
   
 }
+
+/* Here we have an example. Don't know how to send the nulls
+
+PGN: 127237, Source: 1, Destination: 255
+Rudder Limit: 3 - Unavailable
+Heading Limit: 3 - Unavailable
+Track Limit: 3 - Unavailable
+Overide: 3 - Unavailable
+Steering Mode: 1 - NonFollowUpDevice
+Turn Mode: 7 - Unavailable
+Heading Mode: 3 - Unavailable
+Rudder Direction 7 -> Unavailable
+Rudder Angle: null ???
+Heading To Steer: 218.233911 ??? Is in degrees!!!
+Track: null ???
+Rudder Limit: null >???
+Heading Limit: null ???
+Turn Radius: null ???
+Turn Rate: null ???
+Off Track Limit: null ???
+Vessel Heading: n
+
+*/
