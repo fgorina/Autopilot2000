@@ -10,10 +10,10 @@
 // List here messages your device will transmit.
 const char *onOffValues[] PROGMEM = {"Off", "On", "Error", "Unavailable"};
 const char *steeringModeValues[] PROGMEM = {"Main Steering", "Non Follow Up Device", "Follow Up Device", "Standalone",
-                                            "Heading Control", "Track Control", "Unavailable"};
-const char *turnModeValues[] PROGMEM = {"Rudder limited", "Turn rate controller", "Radius controller", "Unavailable"};
+                                            "Heading Control", "Track Control", "", "Unavailable"};
+const char *turnModeValues[] PROGMEM = {"Rudder limited", "Turn rate controller", "Radius controller", "", "", "", "", "Unavailable"};
 const char *headingReferenceValues[] PROGMEM = {"true", "magnetic", "error", "unavailable"};
-const char *rudderDirectionValues[] PROGMEM = {"No direction", "Starboard", "Port", "Unavailable"};
+const char *rudderDirectionValues[] PROGMEM = {"No direction", "Starboard", "Port", "", "", "", "", "Unavailable"};
 
 const unsigned long TransmitMessages[] PROGMEM = {127506L, 127508L, 127513L, 0};
 
@@ -80,12 +80,12 @@ void setup()
   // Uncomment 3 rows below to see, what device will send to bus
   Serial.begin(115200);
   NMEA2000.SetForwardStream(&Serial);
-  NMEA2000.SetForwardType(tNMEA2000::fwdt_Text);     // Show in clear text. Leave uncommented for default Actisense format.
+  //NMEA2000.SetForwardType(tNMEA2000::fwdt_Text);     // Show in clear text. Leave uncommented for default Actisense format.
 
   // If you also want to see all traffic on the bus use N2km_ListenAndNode instead of N2km_NodeOnly below
   NMEA2000.SetMode(tNMEA2000::N2km_ListenAndNode, 25);
-  // NMEA2000.SetDebugMode(tNMEA2000::dm_ClearText);     // Uncomment this, so you can test code without CAN bus chips on Arduino Mega
-  // NMEA2000.EnableForward(false);                      // Disable all msg forwarding to USB (=Serial)
+  // NMEA2000.SetDebugMode(tNMEA2000::dm_ClearText);  ttttrtt   // Uncomment this, so you can test code without CAN bus chips on Arduino Mega
+  NMEA2000.EnableForward(false);                      // Disable all msg forwarding to USB (=Serial)
 
   //  NMEA2000.SetN2kCANMsgBufSize(2);                    // For this simple example, limit buffer size to 2, since we are only sending data
   // Define OnOpen call back. This will be called, when CAN is open and system starts address claiming.
@@ -98,7 +98,7 @@ void SendN2kBattery()
 {
   tN2kMsg N2kMsg;
 
-  if (DCBatStatusScheduler.IsTime())
+ /* if (DCBatStatusScheduler.IsTime())
   {
       DCBatStatusScheduler.UpdateNextTime();
 
@@ -114,6 +114,7 @@ void SendN2kBattery()
 
     NMEA2000.SendMsg(N2kMsg);
   }
+  */
 
   /*if ( DCStatusScheduler.IsTime() ) {
     DCStatusScheduler.UpdateNextTime();
@@ -184,7 +185,9 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
 
       Serial.print("Command Rudder Angle: ");
       Serial.println(CommandedRudderAngle);
-      Serial.print("Heading to steer course: ");
+      Serial.print("Heading to steer course: (");
+      Serial.print(HeadingToSteerCourse / 3.141592 * 180);
+      Serial.print(") ");
       Serial.println(HeadingToSteerCourse);
       Serial.print("Track: ");
       Serial.println(Track);
@@ -192,7 +195,7 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
       Serial.print("Rudder limit: ");
       Serial.println(RudderLimit);
 
-      Serial.print("Off Heading limir: ");
+      Serial.print("Off Heading limit: ");
       Serial.println(OffHeadingLimit);
 
       Serial.print("Radius of Turn Order: ");
