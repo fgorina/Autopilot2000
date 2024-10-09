@@ -1,5 +1,5 @@
 #include <Arduino.h>
-
+#define ESP32_CAN_TX_PIN GPIO_NUM_16
 #define ESP32_CAN_RX_PIN GPIO_NUM_17
 
 #define V_PIN GPIO_NUM_36
@@ -8,6 +8,8 @@
 #include <NMEA2000_CAN.h>
 #include <N2kMessages.h>
 #include "N2kDeviceList.h"
+#include "GroupHandlers.h"
+#include "State.h"
 
 tN2kDeviceList *pN2kDeviceList;
 #define START_DELAY_IN_S 8
@@ -44,13 +46,13 @@ const unsigned long ReceiveMessages[] PROGMEM = { 126208L, // Request, Command a
                                                   // Other not in EVO-1 Document
 
   
-                                                  127237L, // Heding Track Control
+                                                  127237L, // Heading Track Control
                                                   126720L, // Seatalk1 Pilot Mode
                                                   61184L, // Seatalk: Wireless Keypad  Control
                                                   65288L, // Seatalk Alarm
                                                   65379L, // Seatalk Pilot Mode
                                                   65360L, // Seatalk Pilot Locked Heading
-                                                  130848L, 10918L, 0};
+                                                  0};
 
 // ---  Example of using PROGMEM to hold Product ID.  However, doing this will prevent any updating of
 //      these details outside of recompiling the program.
@@ -80,6 +82,9 @@ const unsigned char AutopilotIndustryGroup = 4; // Marine
 
 bool verbose = false;
 bool analyze = false;
+
+
+tState &State=*(new tState());
 
 void HandleNMEA2000Msg(const tN2kMsg &N2kMsg);
 
@@ -239,6 +244,17 @@ void setup_NMEA2000()
   NMEA2000.ExtendTransmitMessages(TransmitMessages);
   NMEA2000.ExtendReceiveMessages(ReceiveMessages);
   NMEA2000.SetMsgHandler(HandleNMEA2000Msg);
+
+  // Set Group Handlers
+
+
+
+
+  NMEA2000.AddGroupFunctionHandler( new tN2kGroupFunctionHandlerForPGN65379(&NMEA2000, &State));
+  NMEA2000.AddGroupFunctionHandler( new tN2kGroupFunctionHandlerForPGN127250(&NMEA2000, &State));
+  NMEA2000.AddGroupFunctionHandler( new tN2kGroupFunctionHandlerForPGN127245(&NMEA2000, &State));
+  NMEA2000.AddGroupFunctionHandler( new tN2kGroupFunctionHandlerForPGN65360(&NMEA2000, &State));
+
   // NMEA2000.SetOnOpen(OnN2kOpen);
   pN2kDeviceList = new tN2kDeviceList(&NMEA2000);
   NMEA2000.Open();
@@ -519,11 +535,7 @@ bool parseN2kPGN126208PGN65345(const tN2kMsg &N2kMsg, double &WindDatum)
   return true;
 }
 
-void sendAcknowledgeFor(uint16_t PGN){
-  tN2kMsg N2kMsg = N2kMsg();
-
-  
-}
+/*
 void handle126208Command(const tN2kMsg &N2kMsg)
 {
   unsigned char FunctionCode;
@@ -566,7 +578,7 @@ void handle126208Command(const tN2kMsg &N2kMsg)
     }
   }
 }
-
+*/
 void handleHeadingTrackControl(const tN2kMsg &N2kMsg)
 {
   tN2kOnOff RudderLimitExceeded;
@@ -796,38 +808,61 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
 
   switch (N2kMsg.PGN)
   {
-  case 126208:
-    handle126208Command(N2kMsg);
+  
+   case 127245:
+    Serial.println("Received rudder angle info (127245  )");
     break;
 
-  case 127237:
-    handleHeadingTrackControl(N2kMsg);
+  case 127250:
+    Serial.println("Received heading (127250)");
     break;
 
-  case 129284:
-    handleNavigationInfo(N2kMsg);
+  case 127258:
+    Serial.println("Received Magnetic Variation (127258)");
     break;
 
-  case 129285:
-    handleRouteInfo(N2kMsg);
+  case 127259:
+    Serial.println("Received water speed (127259)");
+    break;
+
+  case 129026:
+    Serial.println("Received COG/SOG (129026)");
+    break;
+
+  case 129029:
+    Serial.println("Received GNSS/position (129029)");
     break;
 
   case 129283:
     handleXTE(N2kMsg);
     break;
 
-  
+case 129284:
+    handleNavigationInfo(N2kMsg);
+    break;
+case 129285:
+    handleRouteInfo(N2kMsg);
+    break;
+case 130306:
+    Serial.println("Received wind data (130306)");
+    break;
 
-  case 61184:
-    Serial.println("Received remote command");
+  case 127237:
+    handleHeadingTrackControl(N2kMsg);
     break;
 
   case 126720:
     Serial.println("Received key command");
     break;
+ 
+
+  case 61184:
+    Serial.println("Received remote command");
+    break;
+
 
   default:
-    Serial.print("Received message ");
+    Serial.print("Received unknown message ");
     Serial.println(N2kMsg.PGN);
   }
 }
@@ -870,6 +905,13 @@ void loop()
 
     switch (command)
     {
+
+    case 'i':
+    case 'I':
+
+      State.printInfo();
+      break;
+
     case 108:
     case 76:
 
@@ -900,6 +942,12 @@ void loop()
     case 65:
     case 97:
       analyze = !analyze;
+      if(analyze){
+        Serial.println("Analyzing");
+
+      }else{
+        Serial.println("Not Analyzing");
+      }
       break;
 
     case 27:
