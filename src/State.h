@@ -4,84 +4,48 @@
 #define _State_H_
 
 #include "NMEA2000.h"
+#include "N2kTypes.h"
+#include "PyTypes.h"
 #include "State.h"
 
-enum PyPilotMode {
-    compass,
-    gps,
-    wind,
-    trueWind
-} ;
 
-enum RaymarineMode {
-    Standby = 0,
-    Compass = 0x40,
-    Wind = 0x100,
-    Track = 0x180,
-    NoDrift = 0x181
-};
 
 class tState {
     protected:
-        RaymarineMode pyPilot2RaymarineMode(PyPilotMode mode);
-        PyPilotMode raymarine2PyPilotMode(RaymarineMode mode);
-
+    
     public:
 
-        bool engaged {false};
-        PyPilotMode mode {PyPilotMode::compass};
-        double headingCommandTrue {0.0};
-        double headingCommandMagnetic {0.0};
-        double variation;
-        double heading {0.0};
-        double rudderCommand {0.0};
-        double rudderAngle {0.0};
+        // Autopilot Data
+        
+        tHeadingData heading {when: 0, origin: tDataOrigin::NO_DATA, reference: tN2kHeadingReference::N2khr_Unavailable, heading: 0.0};   // ap.heading
+        tDoubleData deviation {when: 0, origin: tDataOrigin::NO_DATA, value:0.0};
+        tDoubleData variation {when: 0, origin: tDataOrigin::NO_DATA, value:0.0};
+        tDoubleData rudderAngle {when: 0, origin: tDataOrigin::NO_DATA, value: 0.0}; // rudder.angle
+
+        // RW , Commands and data
+        tModeData mode {when: 0, origin: tDataOrigin::NO_DATA, value:tPyPilotMode::compass}; // ap.mode
+        tBoolData engaged {when: 0, origin: tDataOrigin::NO_DATA, value: false};   // ap.enabled
+        tDoubleData headingCommandTrue {when: 0, origin: tDataOrigin::NO_DATA, value:0.0};
+        tDoubleData headingCommandMagnetic {when: 0, origin: tDataOrigin::NO_DATA, value:0.0};    // ap.heading_command
+        tRudderCommandData rudderCommand {when: 0, origin: tDataOrigin::NO_DATA,  direction: tN2kRudderDirectionOrder::N2kRDO_NoDirectionOrder , command: 0.0};
+
+        tTackStateData tackState {when: 0, origin: tDataOrigin::NO_DATA, value: tTackState::TACK_NONE}; //ap.tack.state
+        tTackDirectionData tackDirection {when: 0, origin: tDataOrigin::NO_DATA, value:tTackDirection::TACKING_NONE}; // ap.tack.direction
+
+        // Servo Data
+
+        tDoubleData servoVoltage {when: 0, origin: tDataOrigin::NO_DATA, value:0.0}; // servo.voltage
+        tDoubleData servoAmpHr {when: 0, origin: tDataOrigin::NO_DATA, value:0.0}; //servo.amp_hours
+        tDoubleData servoControllerTemp {when: 0, origin: tDataOrigin::NO_DATA, value:0.0}; // servo.controller_temp      
+        tDoubleData servoPosition {when: 0, origin: tDataOrigin::NO_DATA, value:0.0}; // servo.position
 
 
-
-        void setRaymarineMode(RaymarineMode mode);
-        void setHeading(double heading);
-        void setCommandHeadingMagnetic(double heading);
-        void setCommandHeadingTrue(double heading);
+        
 
         void printInfo();
 
-        // Sending Information
-
-        void sendPilotMode(tNMEA2000 *NMEA2000);
-        void sendVesselHeading(tNMEA2000 *NMEA2000);
-        void sendRudder(tNMEA2000 *NMEA2000);
-        void sendLockedlHeading(tNMEA2000 *NMEA2000);
+      
 
 };
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #endif

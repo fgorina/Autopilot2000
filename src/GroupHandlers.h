@@ -4,6 +4,7 @@
 #include "NMEA2000_CompilerDefns.h"
 #include "N2kGroupFunction.h"
 #include "State.h"
+#include "PyPilot.h"
 
 #if !defined(N2K_NO_GROUP_FUNCTION_SUPPORT)
 
@@ -33,10 +34,10 @@ class tN2kGroupFunctionHandlerForPGN65379 : public tN2kGroupFunctionHandler {
                                uint8_t  NumberOfParameterPairs,
                                int iDev);
     virtual bool HandleCommand(const tN2kMsg &N2kMsg, uint8_t PrioritySetting, uint8_t NumberOfParameterPairs, int iDev);
-    tState* state; 
+    PyPilot* pypilot; 
 
   public:
-    tN2kGroupFunctionHandlerForPGN65379(tNMEA2000 *_pNMEA2000, tState *_state) : tN2kGroupFunctionHandler(_pNMEA2000,65379L),state(_state){}
+    tN2kGroupFunctionHandlerForPGN65379(tNMEA2000 *_pNMEA2000, PyPilot *_pypilot) : tN2kGroupFunctionHandler(_pNMEA2000,65379L),pypilot(_pypilot){}
 };
 
 /*******************************************************************/
@@ -58,10 +59,10 @@ class tN2kGroupFunctionHandlerForPGN127250 : public tN2kGroupFunctionHandler {
                                uint8_t  NumberOfParameterPairs,
                                int iDev);
     
-    tState* state; 
+    PyPilot* pypilot; 
 
   public:
-    tN2kGroupFunctionHandlerForPGN127250(tNMEA2000 *_pNMEA2000, tState *_state) : tN2kGroupFunctionHandler(_pNMEA2000,127250),state(_state){}
+    tN2kGroupFunctionHandlerForPGN127250(tNMEA2000 *_pNMEA2000, PyPilot *_pypilot) : tN2kGroupFunctionHandler(_pNMEA2000,127250),pypilot(_pypilot){}
 };
 
 /*******************************************************************/
@@ -83,10 +84,10 @@ class tN2kGroupFunctionHandlerForPGN127245 : public tN2kGroupFunctionHandler {
                                uint8_t  NumberOfParameterPairs,
                                int iDev);
    
-    tState* state; 
+    PyPilot* pypilot; 
 
   public:
-    tN2kGroupFunctionHandlerForPGN127245(tNMEA2000 *_pNMEA2000, tState *_state) : tN2kGroupFunctionHandler(_pNMEA2000,127745),state(_state){}
+    tN2kGroupFunctionHandlerForPGN127245(tNMEA2000 *_pNMEA2000, PyPilot *_pypilot) : tN2kGroupFunctionHandler(_pNMEA2000,127745),pypilot(_pypilot){}
 };
 
 /*******************************************************************/
@@ -108,10 +109,10 @@ class tN2kGroupFunctionHandlerForPGN65360 : public tN2kGroupFunctionHandler {
                                uint8_t  NumberOfParameterPairs,
                                int iDev);
     virtual bool HandleCommand(const tN2kMsg &N2kMsg, uint8_t PrioritySetting, uint8_t NumberOfParameterPairs, int iDev);
-    tState* state; 
+    PyPilot* pypilot; 
 
   public:
-    tN2kGroupFunctionHandlerForPGN65360(tNMEA2000 *_pNMEA2000, tState *_state) : tN2kGroupFunctionHandler(_pNMEA2000,65360),state(_state){}
+    tN2kGroupFunctionHandlerForPGN65360(tNMEA2000 *_pNMEA2000, PyPilot *_pypilot) : tN2kGroupFunctionHandler(_pNMEA2000,65360),pypilot(_pypilot){}
 };
 #endif
 #endif

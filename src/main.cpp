@@ -11,6 +11,7 @@
 #include "GroupHandlers.h"
 #include "State.h"
 
+
 tN2kDeviceList *pN2kDeviceList;
 #define START_DELAY_IN_S 8
 
@@ -24,47 +25,46 @@ const char *rudderDirectionValues[] PROGMEM = {"No direction", "Starboard", "Por
 const char *distanceCalculationTypeValues[] PROGMEM = {"Great Circle", "Rhumb Line"};
 const char *xTEModeValues[] PROGMEM = {"Autonomous", "Differential", "Estimated", "Simulator", "Manual"};
 const unsigned long TransmitMessages[] PROGMEM = {126208L, // Request, command and "Reconocer?"
-                                                  127245L,  // Rudder Angle every 40ms
+                                                  127245L, // Rudder Angle every 40ms
                                                   127250L, // Rhumb 100 ms
-                                                  65288L,   // Read Seatalk Alarm State
-                                                  65379L,   // Read Pilot Mode
-                                                  65360L,   // Read Pilot locked heading
+                                                  65288L,  // Read Seatalk Alarm State
+                                                  65379L,  // Read Pilot Mode
+                                                  65360L,  // Read Pilot locked heading
                                                   // Perhaps 127251 rate of turn 100 ms and 127357 attitude at 100ms
                                                   0};
-const unsigned long ReceiveMessages[] PROGMEM = { 126208L, // Request, Command and "Reconocer?"
-                                                  127245L, // Rudder Angle
-                                                  127250L, // * Rhumb - Vessel heading
-                                                  127258L, // * Magnetic Variation
-                                                  128259L, // Speed over water
-                                                  129026L, // * Fast COG, SOG update
-                                                  129029L, // * Position GNSS (Date, time, lat, lon)
-                                                  129283L, // * XTE
-                                                  129284L, // * Route information
-                                                  129285L, // * Active Waypoint data
-                                                  130306L, // * Wind data
+const unsigned long ReceiveMessages[] PROGMEM = {126208L, // Request, Command and "Reconocer?"
+                                                 127245L, // Rudder Angle
+                                                 127250L, // * Rhumb - Vessel heading
+                                                 127258L, // * Magnetic Variation
+                                                 128259L, // Speed over water
+                                                 129026L, // * Fast COG, SOG update
+                                                 129029L, // * Position GNSS (Date, time, lat, lon)
+                                                 129283L, // * XTE
+                                                 129284L, // * Route information
+                                                 129285L, // * Active Waypoint data
+                                                 130306L, // * Wind data
 
-                                                  // Other not in EVO-1 Document
+                                                 // Other not in EVO-1 Document
 
-  
-                                                  127237L, // Heading Track Control
-                                                  126720L, // Seatalk1 Pilot Mode
-                                                  61184L, // Seatalk: Wireless Keypad  Control
-                                                  65288L, // Seatalk Alarm
-                                                  65379L, // Seatalk Pilot Mode
-                                                  65360L, // Seatalk Pilot Locked Heading
-                                                  0};
+                                                 127237L, // Heading Track Control
+                                                 126720L, // Seatalk1 Pilot Mode
+                                                 61184L,  // Seatalk: Wireless Keypad  Control
+                                                 65288L,  // Seatalk Alarm
+                                                 65379L,  // Seatalk Pilot Mode
+                                                 65360L,  // Seatalk Pilot Locked Heading
+                                                 0};
 
 // ---  Example of using PROGMEM to hold Product ID.  However, doing this will prevent any updating of
 //      these details outside of recompiling the program.
 const tNMEA2000::tProductInformation AutopilotProductInformation PROGMEM = {
-    1300,                           // N2kVersion
-    100,                            // Manufacturer's product code
+    1300,         // N2kVersion
+    100,          // Manufacturer's product code
     "87180-2-EN", // Manufacturer's Model ID
-    "3.1.2",           // Manufacturer's Software version code
-    "1.0.0",           // Manufacturer's Model version
-    "00000001",                     // Manufacturer's Model serial code
-    1,                              // CertificationLevel
-    4                               // LoadEquivalency
+    "3.1.2",      // Manufacturer's Software version code
+    "EV-1",       // Manufacturer's Model version
+    "00000001",   // Manufacturer's Model serial code
+    1,            // CertificationLevel
+    4             // LoadEquivalency
 };
 
 // ---  Example of using PROGMEM to hold Configuration information.  However, doing this will prevent any updating of
@@ -75,28 +75,17 @@ const char AutopilotInstallationDescription2[] PROGMEM = "Test";
 
 const unsigned long AutopilotSerialNumber PROGMEM = 1;
 const unsigned char AutopilotDeviceFunction = 150; // Autopilot
-const unsigned char AutopilotDeviceClass = 40; // Steering and Control Surfaces
-const uint16_t AutopilotManufacturerCode = 1851; // Raymarine
-const unsigned char AutopilotIndustryGroup = 4; // Marine
-
+const unsigned char AutopilotDeviceClass = 40;     // Steering and Control Surfaces
+const uint16_t AutopilotManufacturerCode = 1851;   // Raymarine
+const unsigned char AutopilotIndustryGroup = 4;    // Marine
 
 bool verbose = false;
 bool analyze = false;
 
+PyPilot  &pypilot = *(new PyPilot());
 
-tState &State=*(new tState());
 
 void HandleNMEA2000Msg(const tN2kMsg &N2kMsg);
-
-// Functions for getting data
-
-double rudderAngle(){
-  return 1.0;
-}
-
-double heading(){
-  return 3.141592;
-}
 
 //*****************************************************************************
 void PrintUlongList(const char *prefix, const unsigned long *List)
@@ -213,20 +202,22 @@ void OnN2kOpen()
   // Start schedulers now.
   NavigationDataScheduler.UpdateNextTime();
   RudderAngleScheduler.UpdateNextTime();
- // BatConfScheduler.UpdateNextTime();
+  // BatConfScheduler.UpdateNextTime();
 }
 
 void setup_NMEA2000()
 {
+  
+
   NMEA2000.SetProductInformation(&AutopilotProductInformation);
   // Set Configuration information
   NMEA2000.SetProgmemConfigurationInformation(AutopilotManufacturerInformation, AutopilotInstallationDescription1, AutopilotInstallationDescription2);
   // Set device information
-  NMEA2000.SetDeviceInformation(AutopilotSerialNumber,   // Unique number. Use e.g. Serial number.
-                                AutopilotDeviceFunction, // Device function=Autopìlot. See codes on https://web.archive.org/web/20190531120557/https://www.nmea.org/Assets/20120726%20nmea%202000%20class%20&%20function%20codes%20v%202.00.pdf
-                                AutopilotDeviceClass,  // Device class=Steering and Control Surfaces. See codes on  https://web.archive.org/web/20190531120557/https://www.nmea.org/Assets/20120726%20nmea%202000%20class%20&%20function%20codes%20v%202.00.pdf
+  NMEA2000.SetDeviceInformation(AutopilotSerialNumber,     // Unique number. Use e.g. Serial number.
+                                AutopilotDeviceFunction,   // Device function=Autopìlot. See codes on https://web.archive.org/web/20190531120557/https://www.nmea.org/Assets/20120726%20nmea%202000%20class%20&%20function%20codes%20v%202.00.pdf
+                                AutopilotDeviceClass,      // Device class=Steering and Control Surfaces. See codes on  https://web.archive.org/web/20190531120557/https://www.nmea.org/Assets/20120726%20nmea%202000%20class%20&%20function%20codes%20v%202.00.pdf
                                 AutopilotManufacturerCode, // Just choosen free from code list on https://web.archive.org/web/20190529161431/http://www.nmea.org/Assets/20121020%20nmea%202000%20registration%20list.pdf
-                                AutopilotIndustryGroup // Industry Group
+                                AutopilotIndustryGroup     // Industry Group
   );
 
   Serial.begin(115200);
@@ -247,14 +238,11 @@ void setup_NMEA2000()
 
   // Set Group Handlers
 
-
-
-
-  NMEA2000.AddGroupFunctionHandler( new tN2kGroupFunctionHandlerForPGN65379(&NMEA2000, &State));
-  NMEA2000.AddGroupFunctionHandler( new tN2kGroupFunctionHandlerForPGN127250(&NMEA2000, &State));
-  NMEA2000.AddGroupFunctionHandler( new tN2kGroupFunctionHandlerForPGN127245(&NMEA2000, &State));
-  NMEA2000.AddGroupFunctionHandler( new tN2kGroupFunctionHandlerForPGN65360(&NMEA2000, &State));
-
+  NMEA2000.AddGroupFunctionHandler(new tN2kGroupFunctionHandlerForPGN65379(&NMEA2000, &pypilot));
+  NMEA2000.AddGroupFunctionHandler(new tN2kGroupFunctionHandlerForPGN127250(&NMEA2000, &pypilot));
+  NMEA2000.AddGroupFunctionHandler(new tN2kGroupFunctionHandlerForPGN127245(&NMEA2000, &pypilot));
+  NMEA2000.AddGroupFunctionHandler(new tN2kGroupFunctionHandlerForPGN65360(&NMEA2000, &pypilot));
+  NMEA2000.SetN2kSource(204);
   // NMEA2000.SetOnOpen(OnN2kOpen);
   pN2kDeviceList = new tN2kDeviceList(&NMEA2000);
   NMEA2000.Open();
@@ -269,6 +257,8 @@ void setup()
   //   NMEA2000 Config
 
   setup_NMEA2000();
+  pypilot.set_nmea(&NMEA2000);
+  pypilot.pypilot_begin("elrond", "ailataN1991");
 }
 
 void SendN2kBattery()
@@ -799,6 +789,46 @@ void handleRouteInfo(const tN2kMsg &N2kMsg)
   }
 }
 
+void handleRudderCommand(const tN2kMsg &N2kMsg)
+{
+
+  double RudderPosition;
+  unsigned char Instance;
+  tN2kRudderDirectionOrder RudderDirectionOrder;
+  double AngleOrder;
+  ParseN2kRudder(N2kMsg, RudderPosition, Instance, RudderDirectionOrder, AngleOrder);
+  pypilot.setRudderAngle(RudderPosition, tDataOrigin::kNMEA2000);
+  pypilot.setRudderCommand(AngleOrder, RudderDirectionOrder, tDataOrigin::kNMEA2000);
+}
+
+void handleHeading(const tN2kMsg &N2kMsg)
+{
+  unsigned char SID;
+  double Heading;
+  double Deviation;
+  double Variation;
+  tN2kHeadingReference ref;
+
+  ParseN2kHeading(N2kMsg, SID, Heading, Deviation, Variation, ref);
+
+  pypilot.setHeading(Heading, ref, tDataOrigin::kNMEA2000);
+  pypilot.setVariation(Variation, tDataOrigin::kNMEA2000);
+  pypilot.setDeviation(Deviation, tDataOrigin::kNMEA2000);
+}
+
+void handleMagneticVariation(const tN2kMsg &N2kMsg)
+{
+
+  unsigned char SID;
+  tN2kMagneticVariation Source;
+  uint16_t DaysSince1970;
+  double Variation;
+
+  ParseN2kMagneticVariation(N2kMsg, SID, Source, DaysSince1970, Variation);
+
+  pypilot.setVariation(Variation, tDataOrigin::kNMEA2000);
+}
+
 void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
 {
   if (!analyze)
@@ -808,20 +838,23 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
 
   switch (N2kMsg.PGN)
   {
-  
-   case 127245:
+
+  case 127245:
     Serial.println("Received rudder angle info (127245  )");
+    handleRudderCommand(N2kMsg);
     break;
 
   case 127250:
     Serial.println("Received heading (127250)");
+    handleHeading(N2kMsg);
     break;
 
   case 127258:
     Serial.println("Received Magnetic Variation (127258)");
+    handleMagneticVariation(N2kMsg);
     break;
 
-  case 127259:
+  case 128259:
     Serial.println("Received water speed (127259)");
     break;
 
@@ -837,13 +870,13 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
     handleXTE(N2kMsg);
     break;
 
-case 129284:
+  case 129284:
     handleNavigationInfo(N2kMsg);
     break;
-case 129285:
+  case 129285:
     handleRouteInfo(N2kMsg);
     break;
-case 130306:
+  case 130306:
     Serial.println("Received wind data (130306)");
     break;
 
@@ -854,12 +887,10 @@ case 130306:
   case 126720:
     Serial.println("Received key command");
     break;
- 
 
   case 61184:
     Serial.println("Received remote command");
     break;
-
 
   default:
     Serial.print("Received unknown message ");
@@ -867,28 +898,7 @@ case 130306:
   }
 }
 
-/* Here we have an example. Don't know how to send the nulls
 
-PGN: 127237, Source: 1, Destination: 255
-Rudder Limit: 3 - Unavailable
-Heading Limit: 3 - Unavailable
-Track Limit: 3 - Unavailable
-Overide: 3 - Unavailable
-Steering Mode: 1 - NonFollowUpDevice
-Turn Mode: 7 - Unavailable
-Heading Mode: 3 - Unavailable
-Rudder Direction 7 -> Unavailable
-Rudder Angle: null ???
-Heading To Steer: 218.233911 ??? Is in degrees!!!
-Track: null ???
-Rudder Limit: null >???
-Heading Limit: null ???
-Turn Radius: null ???
-Turn Rate: null ???
-Off Track Limit: null ???
-Vessel Heading: n
-
-*/
 
 void loop()
 {
@@ -909,7 +919,7 @@ void loop()
     case 'i':
     case 'I':
 
-      State.printInfo();
+      pypilot.state->printInfo();
       break;
 
     case 108:
@@ -942,10 +952,12 @@ void loop()
     case 65:
     case 97:
       analyze = !analyze;
-      if(analyze){
+      if (analyze)
+      {
         Serial.println("Analyzing");
-
-      }else{
+      }
+      else
+      {
         Serial.println("Not Analyzing");
       }
       break;
@@ -957,4 +969,5 @@ void loop()
       break;
     }
   }
+  vTaskDelay(10);
 }

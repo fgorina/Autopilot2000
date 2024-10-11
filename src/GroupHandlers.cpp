@@ -129,7 +129,7 @@ bool tN2kGroupFunctionHandlerForPGN65379::HandleRequest(const tN2kMsg &N2kMsg,
     // Send delayed - there was problems with test tool with too fast response.
     // Must Send PGN
     Serial.println("Sending mode");
-    state->sendPilotMode(pNMEA2000); // perhaps use iDev as second parameter???
+    pypilot->sendPilotMode(pNMEA2000); // perhaps use iDev as second parameter???
   }
 
   return true;
@@ -215,7 +215,7 @@ bool tN2kGroupFunctionHandlerForPGN65379::HandleCommand(const tN2kMsg &N2kMsg, u
 
   if (PARec == N2kgfpec_Acknowledge)
   {
-    state->setRaymarineMode(RaymarineMode(raymarineMode));
+    pypilot->setRaymarineMode(tRaymarineMode(raymarineMode), tDataOrigin::kNMEA2000);
   }
 
   return true;
@@ -245,7 +245,7 @@ bool tN2kGroupFunctionHandlerForPGN127250::HandleRequest(const tN2kMsg &N2kMsg,
   // Send delayed - there was problems with test tool with too fast response.
   // Must Send PGN
 
-  state->sendVesselHeading(pNMEA2000); // perhaps use iDev as second parameter???
+  pypilot->sendVesselHeading(pNMEA2000); // perhaps use iDev as second parameter???
 
   return true;
 }
@@ -273,7 +273,7 @@ bool tN2kGroupFunctionHandlerForPGN127245::HandleRequest(const tN2kMsg &N2kMsg,
   // Send delayed - there was problems with test tool with too fast response.
   // Must Send PGN
 
-  state->sendVesselHeading(pNMEA2000); // perhaps use iDev as second parameter???
+  pypilot->sendVesselHeading(pNMEA2000); // perhaps use iDev as second parameter???
 
   return true;
 }
@@ -407,7 +407,7 @@ bool tN2kGroupFunctionHandlerForPGN65360::HandleRequest(const tN2kMsg &N2kMsg,
     // Send delayed - there was problems with test tool with too fast response.
     // Must Send PGN
 
-    state->sendLockedlHeading(pNMEA2000); // perhaps use iDev as second parameter???
+    pypilot->sendLockedHeading(pNMEA2000); // perhaps use iDev as second parameter???
   }
   return true;
 }
@@ -463,14 +463,14 @@ bool tN2kGroupFunctionHandlerForPGN65360::HandleCommand(const tN2kMsg &N2kMsg, u
 
     case N2kPGN65360_TargetHeadingTrue_field:
     {
-      trueHeading = N2kMsg.Get2ByteDouble(0.0001, Index);
+      trueHeading = N2kMsg.Get2ByteDouble(0.0001, Index) / 3.141592 * 180.0;
      
       break;
     }
 
     case N2kPGN65360_TargetHeadingMagnetic_field:
     {
-      magneticHeading = N2kMsg.Get2ByteDouble(0.0001, Index);
+      magneticHeading = N2kMsg.Get2ByteDouble(0.0001, Index) / 3.141592 * 180.0;
       break;
     }
 
@@ -495,12 +495,12 @@ bool tN2kGroupFunctionHandlerForPGN65360::HandleCommand(const tN2kMsg &N2kMsg, u
   {
      Serial.print("Setting true heading to ");
       Serial.println(trueHeading);
-      state->setCommandHeadingTrue(trueHeading);
+      pypilot->setCommandHeadingTrue(trueHeading, tDataOrigin::kNMEA2000);
 
 
       Serial.print("Setting magnetic heading to ");
       Serial.println(magneticHeading);
-      state->setCommandHeadingMagnetic(magneticHeading);
+      pypilot->setCommandHeadingMagnetic(magneticHeading, tDataOrigin::kNMEA2000);
   }
 
   return true;
