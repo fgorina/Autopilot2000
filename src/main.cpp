@@ -11,6 +11,22 @@
 #include "GroupHandlers.h"
 #include "State.h"
 
+// KLey Definition
+enum key_codes
+{
+  KEY_STANDBY = 0x02FD,
+  KEY_AUTO = 0x01FE,
+  KEY_WIND = 0x23DC,
+  KEY_AUTOTRACK = 0x03FC,
+  KEY_PLUS_1 = 0x07f8,
+  KEY_PLUS_10 = 0x08f7,
+  KEY_MINUS_1 = 0x05fa,
+  KEY_MINUS_10 = 0x06f9,
+  KEY_MINUS_1_MINUS_10 = 0x21de,
+  KEY_PLUS_1_PLUS_10 = 0x22dd,
+  KEY_TACK_PORTSIDE = KEY_MINUS_1_MINUS_10,
+  KEY_TACK_STARBORD = KEY_PLUS_1_PLUS_10
+};
 
 tN2kDeviceList *pN2kDeviceList;
 #define START_DELAY_IN_S 8
@@ -82,8 +98,7 @@ const unsigned char AutopilotIndustryGroup = 4;    // Marine
 bool verbose = false;
 bool analyze = false;
 
-PyPilot  &pypilot = *(new PyPilot());
-
+PyPilot &pypilot = *(new PyPilot());
 
 void HandleNMEA2000Msg(const tN2kMsg &N2kMsg);
 
@@ -190,24 +205,22 @@ void ListDevices(bool force = false)
 // IsDefaultFastPacketMessage) and message first start offsets. Use a bit different offset for
 // each message so they will not be sent at same time.
 tN2kSyncScheduler NavigationDataScheduler(false, 100, 500);
-tN2kSyncScheduler RudderAngleScheduler(false, 40, 510);
-tN2kSyncScheduler BatConfScheduler(false, 5000, 520); // Non periodic
+tN2kSyncScheduler RudderAngleScheduler(false, 500, 510); // Perhaps shopuld be 100?
+tN2kSyncScheduler BatConfScheduler(false, 5000, 520);    // Non periodic
 
 // *****************************************************************************
 // Call back for NMEA2000 open. This will be called, when library starts bus communication.
 // See NMEA2000.SetOnOpen(OnN2kOpen); on setup()
 void OnN2kOpen()
 {
-  return;
   // Start schedulers now.
-  NavigationDataScheduler.UpdateNextTime();
+  // NavigationDataScheduler.UpdateNextTime();
   RudderAngleScheduler.UpdateNextTime();
   // BatConfScheduler.UpdateNextTime();
 }
 
 void setup_NMEA2000()
 {
-  
 
   NMEA2000.SetProductInformation(&AutopilotProductInformation);
   // Set Configuration information
@@ -242,8 +255,9 @@ void setup_NMEA2000()
   NMEA2000.AddGroupFunctionHandler(new tN2kGroupFunctionHandlerForPGN127250(&NMEA2000, &pypilot));
   NMEA2000.AddGroupFunctionHandler(new tN2kGroupFunctionHandlerForPGN127245(&NMEA2000, &pypilot));
   NMEA2000.AddGroupFunctionHandler(new tN2kGroupFunctionHandlerForPGN65360(&NMEA2000, &pypilot));
+  NMEA2000.AddGroupFunctionHandler(new tN2kGroupFunctionHandlerForPGN65345(&NMEA2000, &pypilot));
   NMEA2000.SetN2kSource(204);
-  // NMEA2000.SetOnOpen(OnN2kOpen);
+  NMEA2000.SetOnOpen(OnN2kOpen);
   pN2kDeviceList = new tN2kDeviceList(&NMEA2000);
   NMEA2000.Open();
 }
@@ -260,70 +274,6 @@ void setup()
   pypilot.set_nmea(&NMEA2000);
   pypilot.pypilot_begin("elrond", "ailataN1991");
 }
-
-void SendN2kBattery()
-{
-  tN2kMsg N2kMsg;
-
-  /* if (DCBatStatusScheduler.IsTime())
-   {
-       DCBatStatusScheduler.UpdateNextTime();
-
-     SetN2kHeadingTrackControl(N2kMsg, NMEA2000.SetProductInformation(&AutopilotProductInformation);
-  // Set Configuration information
-  NMEA2000.SetProgmemConfigurationInformation(AutopilotManufacturerInformation, AutopilotInstallationDescription1, AutopilotInstallationDescription2);
-  // Set device information
-  NMEA2000.SetDeviceInformation(1,   // Unique number. Use e.g. Serial number.
-                                150, // Device function=Autopìlot. See codes on https://web.archive.org/web/20190531120557/https://www.nmea.org/Assets/20120726%20nmea%202000%20class%20&%20function%20codes%20v%202.00.pdf
-                                40,  // Device class=Steering and Control Surfaces. See codes on  https://web.archive.org/web/20190531120557/https://www.nmea.org/Assets/20120726%20nmea%202000%20class%20&%20function%20codes%20v%202.00.pdf
-                                2046 // Just choosen free from code list on https://web.archive.org/web/20190529161431/http://www.nmea.org/Assets/20121020%20nmea%202000%20registration%20list.pdf
-  );
-
-  Serial.begin(115200);
-  NMEA2000.SetForwardStream(&Serial);
-  NMEA2000.SetForwardType(tNMEA2000::fwdt_Text); // Show in clear text. Leave uncommented for default Actisense format.
-
-  // If you also want to see all traffic on theTransmitTransmit  bus use N2km_ListenAndNode instead of N2km_NodeOnly below
-  NMEA2000.SetMode(tNMEA2000::N2km_ListenAndNode, 25);
-  // NMEA2000.SetDebugMode(tNMEA2000::dm_ClearText);  ttttrtt   // Uncomment this, so you can test code without CAN bus chips on Arduino Mega
-  // NMEA2000.EnableForward(false);                      // Disable all msg forwarding to USB (=Serial)
-
-  //  NMEA2000.SetN2kCANMsgBufSize(2);                    // For this simple example, limit buffer size to 2, since we are only sending data
-  // Define OnOpen call back. This will be called, when CAN is open and system starts address claiming.
-
-  NMEA2000.ExtendTransmitMessages(TransmitMessages);
-  NMEA2000.ExtendReceiveMessages(ReceiveMessages);
-  NMEA2000.SetMsgHandler(HandleNMEA2000Msg);
-  NMEA2000.SetOnOpen(OnN2kOpen);
-  NMEA2000.Open();
-
-     N2kOnOff_Unavailable,
-     N2kOnOff_Unavailable,
-     N2kOnOff_Unavailable,
-     N2kOnOff_Unavailable,
-     N2kSM_HeadingControl,
-     N2kTM_Unavailable,
-     N2khr_magnetic,
-     N2kRDO_Unavailable, 0.0, 3.151592, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-
-     NMEA2000.SendMsg(N2kMsg);
-   }
-   */
-
-  /*if ( DCStatusScheduler.IsTime() ) {
-    DCStatusScheduler.UpdateNextTime();
-    SetN2kDCStatus(N2kMsg,1,1,N2kDCt_Battery,56,92,38500,0.012);
-    NMEA2000.SendMsg(N2kMsg);
-  }
-
-  if ( BatConfScheduler.IsTime() ) {
-    BatConfScheduler.UpdateNextTime();
-    SetN2kBatConf(N2kMsg,1,N2kDCbt_Gel,N2kDCES_Yes,N2kDCbnv_12v,N2kDCbc_LeadAcid,AhToCoulomb(420),53,1.251,75);
-    NMEA2000.SendMsg(N2kMsg);
-  }
-  */
-}
-
 typedef struct t_waypoint
 {
   uint16_t id;
@@ -374,201 +324,8 @@ bool ParseN2kPGN129285(const tN2kMsg &N2kMsg, uint16_t &Start, uint16_t &nItems,
   return true;
 }
 
-bool parseN2kPGN126208(const tN2kMsg &N2kMsg, unsigned char &FunctionCode, uint32_t &PGN)
-{
-  int index = 0;
+// PGN direct handles
 
-  if (N2kMsg.PGN != 126208)
-  {
-    return false;
-  }
-  FunctionCode = N2kMsg.GetByte(index);
-  PGN = N2kMsg.Get3ByteUInt(index);
-  return true;
-}
-
-// PGN 65379 in PGN 126208 command mode means SetMode
-
-bool parseN2kPGN126208PGN65379(const tN2kMsg &N2kMsg, uint16_t &PilotMode)
-{
-  int index = 0;
-  uint16_t ManufacturerCode;
-  unsigned char IndustryCode;
-
-  if (N2kMsg.PGN != 126208 && N2kMsg.GetByte(index) != 1 && N2kMsg.Get3ByteUInt(index) != 65379)
-  {
-    return false;
-  }
-  unsigned char priority = N2kMsg.GetByte(index);
-  unsigned char nParams = N2kMsg.GetByte(index);
-
-  // Here begin the actual parameters of 65379
-  unsigned ip = N2kMsg.GetByte(index);
-  if (ip != 1)
-  {
-    return false;
-  }
-  ManufacturerCode = N2kMsg.Get2ByteUInt(index);
-  if (ManufacturerCode != 1851)
-  { // Raymarine
-    return false;
-  }
-  ip = N2kMsg.GetByte(index);
-  if (ip != 3)
-  {
-    return false;
-  }
-  IndustryCode = N2kMsg.GetByte(index); // Marine
-  if (IndustryCode != 4)
-  {
-    return false;
-  }
-  ip = N2kMsg.GetByte(index);
-  if (ip != 4)
-  {
-    return false;
-  }
-
-  PilotMode = N2kMsg.Get2ByteInt(index);
-
-  // 0 -> STANDBY, 64 -> Auto compass, 256 -> Vane, Wind  384 -> Track, 385 -> No Drift, COG Referenced
-
-  return 1;
-}
-
-// PGN 65360 in PGN 126208 command mode means Set Locked heading
-
-bool parseN2kPGN126208PGN65360(const tN2kMsg &N2kMsg, double &PilotCourse)
-{
-  int index = 0;
-  uint16_t ManufacturerCode;
-  unsigned char IndustryCode;
-
-  if (N2kMsg.PGN != 126208 && N2kMsg.GetByte(index) != 1 && N2kMsg.Get3ByteUInt(index) != 65360)
-  {
-    return false;
-  }
-  unsigned char priority = N2kMsg.GetByte(index);
-  unsigned char nParams = N2kMsg.GetByte(index);
-
-  // Here begin the actual parameters of 65379
-  unsigned char ip;
-  ip = N2kMsg.GetByte(index);
-  if (ip != 1)
-  {
-    return false;
-  }
-  ManufacturerCode = N2kMsg.Get2ByteUInt(index);
-  if (ManufacturerCode != 1851)
-  { // Raymarine
-    return false;
-  }
-  ip = N2kMsg.GetByte(index);
-  if (ip != 3)
-  {
-    return false;
-  }
-  IndustryCode = N2kMsg.GetByte(index); // Marine
-  if (IndustryCode != 4)
-  {
-    return false;
-  }
-  ip = N2kMsg.GetByte(index);
-  if (ip != 4)
-  {
-    return false;
-  }
-  PilotCourse = N2kMsg.Get2ByteDouble(0.0001, index);
-  return true;
-}
-
-// Here is SetWindCourse
-
-bool parseN2kPGN126208PGN65345(const tN2kMsg &N2kMsg, double &WindDatum)
-{
-  int index = 0;
-  uint16_t ManufacturerCode;
-  unsigned char IndustryCode;
-
-  if (N2kMsg.PGN != 126208 && N2kMsg.GetByte(index) != 1 && N2kMsg.Get3ByteUInt(index) != 65360)
-  {
-    return false;
-  }
-  unsigned char priority = N2kMsg.GetByte(index);
-  unsigned char nParams = N2kMsg.GetByte(index);
-
-  // Here begin the actual parameters of 65379
-  unsigned char ip;
-  ip = N2kMsg.GetByte(index);
-  if (ip != 1)
-  {
-    return false;
-  }
-  ManufacturerCode = N2kMsg.Get2ByteUInt(index);
-  if (ManufacturerCode != 1851)
-  { // Raymarine
-    return false;
-  }
-  ip = N2kMsg.GetByte(index);
-  if (ip != 3)
-  {
-    return false;
-  }
-  IndustryCode = N2kMsg.GetByte(index); // Marine
-  if (IndustryCode != 4)
-  {
-    return false;
-  }
-  ip = N2kMsg.GetByte(index);
-
-  WindDatum = N2kMsg.Get2ByteDouble(0.0001, index);
-  return true;
-}
-
-/*
-void handle126208Command(const tN2kMsg &N2kMsg)
-{
-  unsigned char FunctionCode;
-  uint32_t PGN;
-  uint16_t PilotMode;
-  double PilotHeading;
-  double WindDatum;
-
-  if (!parseN2kPGN126208(N2kMsg, FunctionCode, PGN))
-  {
-    return;
-  }
-  if (FunctionCode == 1)
-  { // Command. Will add Request later
-    switch (PGN)
-    {
-    case 65379: // SetMode
-      if (parseN2kPGN126208PGN65379(N2kMsg, PilotMode))
-      {
-        Serial.print("Setting Autopilot Mode to: ");
-        Serial.println(PilotMode);
-      }
-      break;
-
-    case 65360: // Set locked heading
-      if (parseN2kPGN126208PGN65360(N2kMsg, PilotHeading))
-      {
-        Serial.print("Setting Autopilot Heading to: ");
-        Serial.println(PilotHeading);
-      }
-      break;
-
-    case 65345: // Set WindDatum
-      if (parseN2kPGN126208PGN65345(N2kMsg, WindDatum))
-      {
-        Serial.print("Setting Wind Datum to: ");
-        Serial.println(WindDatum);
-      }
-      break;
-    }
-  }
-}
-*/
 void handleHeadingTrackControl(const tN2kMsg &N2kMsg)
 {
   tN2kOnOff RudderLimitExceeded;
@@ -829,6 +586,133 @@ void handleMagneticVariation(const tN2kMsg &N2kMsg)
   pypilot.setVariation(Variation, tDataOrigin::kNMEA2000);
 }
 
+void processKey(uint16_t key)
+{
+  switch (key)
+  {
+
+  case key_codes::KEY_STANDBY:
+  {
+    pypilot.pypilot_send_disengage();
+
+    break;
+  }
+
+  case key_codes::KEY_AUTO:
+  {
+
+    pypilot.pypilot_send_mode(tPyPilotMode::compass);
+    pypilot.pypilot_send_command(pypilot.state->heading.heading);
+    pypilot.pypilot_send_engage();
+
+    break;
+  }
+
+  case key_codes::KEY_WIND:
+  {
+    pypilot.pypilot_send_mode(tPyPilotMode::wind);
+    pypilot.pypilot_send_engage();
+    break;
+  }
+
+  case key_codes::KEY_AUTOTRACK:
+  {
+    Serial.println("Autotrack no defined for now");
+    break;
+  }
+  case key_codes::KEY_PLUS_1:
+  {
+    double command = pypilot.state->headingCommandMagnetic.value + 1.0;
+    pypilot.pypilot_send_command(command);
+    break;
+  }
+  case key_codes::KEY_PLUS_10:
+  {
+    double command = pypilot.state->headingCommandMagnetic.value + 10.0;
+    pypilot.pypilot_send_command(command);
+
+    break;
+  }
+
+  case key_codes::KEY_MINUS_1:
+  {
+    double command = pypilot.state->headingCommandMagnetic.value - 1.0;
+    pypilot.pypilot_send_command(command);
+
+    break;
+  }
+
+  case key_codes::KEY_MINUS_10:
+  {
+    double command = pypilot.state->headingCommandMagnetic.value - 10.0;
+    pypilot.pypilot_send_command(command);
+
+    break;
+  }
+
+  case key_codes::KEY_TACK_PORTSIDE:
+
+  {
+    pypilot.setTackDirection(tTackDirection::TACKING_TO_PORT, tDataOrigin::kNMEA2000);
+    break;
+    pypilot.pypilot_send_tack();
+  }
+
+  case key_codes::KEY_TACK_STARBORD:
+  {
+  }
+    pypilot.setTackDirection(tTackDirection::TACKING_TO_STARBOARD, tDataOrigin::kNMEA2000);
+    pypilot.pypilot_send_tack();
+    break;
+  }
+}
+void handleKey(const tN2kMsg &N2kMsg)
+{
+  uint16_t manufacturer;
+  unsigned char industryCode;
+  int Index = 0;
+  unsigned char c1;
+  unsigned char c2;
+  uint16_t propietaryCode;
+  unsigned char command;
+  unsigned char device;
+  uint16_t key;
+
+  c1 = N2kMsg.GetByte(Index);
+  c2 = N2kMsg.GetByte(Index);
+
+  unsigned char upp = c2 & 0x07;
+  manufacturer = upp * 256 + c1;
+  industryCode = (c2 & 0xE0) >> 5;
+
+  Serial.print("Manufacturer for 12720 : ");
+  Serial.println(manufacturer);
+  if (manufacturer = AutopilotManufacturerCode)
+  {
+    propietaryCode = N2kMsg.Get2ByteUInt(Index);
+
+    if (propietaryCode == 33264)
+    {
+      command = N2kMsg.GetByte(Index);
+      if (command == 132)
+      {
+        // Set Mode
+      }
+      else if (command == 134)
+      {
+        device = N2kMsg.GetByte(Index);
+        Serial.print("Device ");
+        Serial.println(device);
+
+        key = N2kMsg.Get2ByteUInt(Index);
+        Serial.print("Key: ");
+        Serial.println(key);
+        processKey(key);
+      }
+    }
+  }
+}
+
 void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
 {
   if (!analyze)
@@ -885,7 +769,7 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
     break;
 
   case 126720:
-    Serial.println("Received key command");
+  handleKey(N2kMsg);
     break;
 
   case 61184:
@@ -898,12 +782,20 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
   }
 }
 
-
+void SendN2kRudder() // It is sent every 100ms
+{
+  tN2kMsg N2kMsg;
+  if (RudderAngleScheduler.IsTime())
+  {
+    RudderAngleScheduler.UpdateNextTime();
+    pypilot.sendRudder(&NMEA2000);
+  }
+}
 
 void loop()
 {
 
-  // SendN2kBattery();
+  SendN2kRudder();
   NMEA2000.ParseMessages();
   ListDevices();
 

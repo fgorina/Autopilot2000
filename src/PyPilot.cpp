@@ -731,6 +731,27 @@ void PyPilot::sendLockedHeading(tNMEA2000 *NMEA2000)
 
     NMEA2000->SendMsg(N2kMsg);
 }
+void PyPilot::sendWindDatum(tNMEA2000 *NMEA2000){
+
+    Serial.print("Sending datum  heading of ");
+    Serial.println(state->headingCommandMagnetic.value);
+    tN2kMsg N2kMsg;
+    N2kMsg.SetPGN(65345);
+    double radLockedHeadingTrue = state->headingCommandTrue.value / 180.0 * 3.141592;
+    double radLockedHeadingMagnetic = state->headingCommandMagnetic.value / 180.0 * 3.141592;
+
+    N2kMsg.AddByte(0x3B); // Raymarine, Marine
+    N2kMsg.AddByte(0x47);
+
+    N2kMsg.Add2ByteDouble(radLockedHeadingTrue, 0.0001);        // Wind Datum
+    N2kMsg.Add2ByteDouble(radLockedHeadingMagnetic, 0.0001);    // Rolling Average Wind Angle
+
+    N2kMsg.AddByte(0); // Reserved
+
+    NMEA2000->SendMsg(N2kMsg);
+
+
+}   
 
 // Task function!!!
 

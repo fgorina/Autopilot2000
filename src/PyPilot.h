@@ -89,6 +89,7 @@ public:
         void sendVesselHeading(tNMEA2000 *NMEA2000);
         void sendRudder(tNMEA2000 *NMEA2000);
         void sendLockedHeading(tNMEA2000 *NMEA2000);
+        void sendWindDatum(tNMEA2000 *NMEA2000);
 };
 
 #endif

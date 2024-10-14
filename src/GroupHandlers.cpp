@@ -506,4 +506,142 @@ bool tN2kGroupFunctionHandlerForPGN65360::HandleCommand(const tN2kMsg &N2kMsg, u
   return true;
 }
 
+
+
+
+
+
+/*******************************************************************/
+//
+// 65345 is wind datum
+//  must do request and command (for setting it)
+//
+//
+//      With a request will send the info
+//      With command will set the mode
+//
+#define N2kPGN65345_ManufacturerCode_field 1
+#define N2kPGN65345_Reserved_field 2
+#define N2kPGN65345_IndustryCode_field 3
+#define N2kPGN65345_WindDatum_field 4
+#define N2kPGN65345_RollingAvgWindAngle_field 5
+#define N2kPGN65345_Reserved_field_1 6
+
+bool tN2kGroupFunctionHandlerForPGN65345::HandleRequest(const tN2kMsg &N2kMsg,
+                                                        uint32_t TransmissionInterval,
+                                                        uint16_t TransmissionIntervalOffset,
+                                                        uint8_t NumberOfParameterPairs,
+                                                        int iDev)
+{
+
+  tN2kGroupFunctionTransmissionOrPriorityErrorCode pec = GetRequestGroupFunctionTransmissionOrPriorityErrorCode(TransmissionInterval, TransmissionIntervalOffset);
+  bool MatchFilter = true;
+  tN2kMsg N2kRMsg;
+
+  Serial.println("Received Locked Heading Request");
+  // Start to build response
+  SetStartAcknowledge(N2kRMsg, N2kMsg.Source, PGN,
+                      N2kgfPGNec_Acknowledge, // Always acknowledge for mandatory PGN
+                      pec,
+                      NumberOfParameterPairs);
+  N2kRMsg.Destination = N2kMsg.Source;
+
+  if (NumberOfParameterPairs > 0)
+  { // We need to filter according to fields
+    int i;
+    int Index;
+    uint8_t field;
+    tNMEA2000::tDeviceInformation DI = pNMEA2000->GetDeviceInformation(iDev);
+    tN2kGroupFunctionParameterErrorCode FieldErrorCode;
+    bool FoundInvalidField = false;
+
+    Serial.println(NumberOfParameterPairs);
+    StartParseRequestPairParameters(N2kMsg, Index);
+    // Next read new field values. Note that if message is not broadcast, we need to parse all fields always.
+    for (i = 0; i < NumberOfParameterPairs && (MatchFilter || !tNMEA2000::IsBroadcast(N2kMsg.Destination)); i++)
+    {
+      if (!FoundInvalidField)
+      {
+        field = N2kMsg.GetByte(Index);
+        switch (field)
+        {
+        case N2kPGN65345_ManufacturerCode_field:
+        {
+          MatchRequestField(N2kMsg.Get2ByteUInt(Index), (uint16_t)MANUFACTURER_RAYMARINE, (uint16_t)0x3fff, MatchFilter, FieldErrorCode);
+          break;
+        }
+
+        case N2kPGN65345_Reserved_field:
+        {
+          break;
+        }
+
+        case N2kPGN65345_IndustryCode_field:
+        {
+          MatchRequestField(N2kMsg.GetByte(Index), (uint8_t)INDUSTRY_MARINE, (uint8_t)0x07, MatchFilter, FieldErrorCode);
+          break;
+        }
+
+        case N2kPGN65345_WindDatum_field:
+        {
+          N2kMsg.Get2ByteDouble(0.0001, Index);
+          break;
+        }
+
+        case N2kPGN65345_RollingAvgWindAngle_field:
+        {
+          N2kMsg.Get2ByteDouble(0.0001, Index);
+          break;
+        }
+        case N2kPGN65360_TargetHeadingMagnetic_field:
+        {
+          N2kMsg.Get2ByteDouble(0.0001, Index);
+          break;
+        }
+
+        case N2kPGN65379_Reserved_field_1:
+        {
+          N2kMsg.GetByte(Index);
+          break;
+        }
+
+        default:
+        {
+          Serial.print("Field outside specs ");
+          Serial.println(field);
+          FieldErrorCode = N2kgfpec_InvalidRequestOrCommandParameterField;
+          MatchFilter = false;
+          FoundInvalidField = true;
+        }
+        }
+      }
+      else
+      {
+        // If there is any invalid field, we can not parse others, since we do not
+        // know right data length. So for rest of the fields we can only send response below.
+        FieldErrorCode = N2kgfpec_TemporarilyUnableToComply;
+      }
+      AddAcknowledgeParameter(N2kRMsg, i, FieldErrorCode);
+    }
+  }
+
+  bool RequestOK = (MatchFilter && pec == N2kgfTPec_Acknowledge);
+
+  // Send Acknowledge, if request was not broadcast and it did not match
+  if (!RequestOK)
+  {
+    Serial.println("Sending error for Locked Heading Request");
+    if (!tNMEA2000::IsBroadcast(N2kMsg.Destination))
+      pNMEA2000->SendMsg(N2kRMsg, iDev);
+  }
+  else
+  {
+    // Send delayed - there was problems with test tool with too fast response.
+    // Must Send PGN
+
+    pypilot->sendWindDatum(pNMEA2000); // perhaps use iDev as second parameter???
+  }
+  return true;
+}
+
 #endif

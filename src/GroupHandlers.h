@@ -114,5 +114,28 @@ class tN2kGroupFunctionHandlerForPGN65360 : public tN2kGroupFunctionHandler {
   public:
     tN2kGroupFunctionHandlerForPGN65360(tNMEA2000 *_pNMEA2000, PyPilot *_pypilot) : tN2kGroupFunctionHandler(_pNMEA2000,65360),pypilot(_pypilot){}
 };
+
+/*******************************************************************/
+//
+// 65345 Pilot Wind Datum
+//  must do request and command (for setting it)
+// 
+//  
+//      With a request will send the info but not very clear what are the data
+//
+
+
+class tN2kGroupFunctionHandlerForPGN65345 : public tN2kGroupFunctionHandler {
+  protected:
+    virtual bool HandleRequest(const tN2kMsg &N2kMsg, 
+                               uint32_t TransmissionInterval, 
+                               uint16_t TransmissionIntervalOffset, 
+                               uint8_t  NumberOfParameterPairs,
+                               int iDev);
+  
+  PyPilot* pypilot; 
+  public:
+    tN2kGroupFunctionHandlerForPGN65345(tNMEA2000 *_pNMEA2000, PyPilot *_pypilot) : tN2kGroupFunctionHandler(_pNMEA2000,65345),pypilot(_pypilot){}
+};
 #endif
 #endif
