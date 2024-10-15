@@ -164,7 +164,9 @@ void PyPilot::pypilot_send_mode(tPyPilotMode mode)
       } else if (dataFeed.startsWith("ap.heading_command=")) {
         double oldCommand = state->headingCommandMagnetic.value;
         double newCommand = strtof(dataFeed.substring(strlen("ap.heading_command="), dataFeed.length()).c_str(), NULL);
-        setCommandHeadingMagnetic(newCommand, tDataOrigin::PYPILOT);
+        if(state->mode.value != tPyPilotMode::nav){
+            setCommandHeadingMagnetic(newCommand, tDataOrigin::PYPILOT);
+        }
 
       } else if (dataFeed.startsWith("ap.enabled=true")) {
 
@@ -658,6 +660,10 @@ void PyPilot::setCommandHeadingMagnetic(double heading, tDataOrigin from)
     state->headingCommandMagnetic.value = heading;
     state->headingCommandMagnetic.origin = from;
     state->headingCommandMagnetic.when = millis();
+
+    state->headingCommandTrue.value = heading + state->variation.value;
+    state->headingCommandTrue.origin = from;
+    state->headingCommandTrue.when = millis();
     
     if (from != tDataOrigin::PYPILOT)
     {
