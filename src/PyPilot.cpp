@@ -45,6 +45,7 @@ void PyPilot::pypilot_send_engage()
         pypClient.c.println(F("ap.enabled=true"));
         pypClient.c.flush();
     }
+    pypilot_send_mode(state->mode.value);
 }
 
 void PyPilot::pypilot_send_disengage()
