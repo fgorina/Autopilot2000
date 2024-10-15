@@ -272,7 +272,7 @@ void setup()
 
   setup_NMEA2000();
   pypilot.set_nmea(&NMEA2000);
-  pypilot.pypilot_begin("elrond", "ailataN1991");
+  pypilot.pypilot_begin("Yamato", "ailataN1991");
 }
 typedef struct t_waypoint
 {

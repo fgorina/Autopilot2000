@@ -697,8 +697,6 @@ void PyPilot::sendVesselHeading(tNMEA2000 *NMEA2000)
 
 void PyPilot::sendRudder(tNMEA2000 *NMEA2000)
 {
-    Serial.print("Sending rudder angle of ");
-    Serial.println(state->rudderAngle.value);
     tN2kMsg N2kMsg;
     N2kMsg.SetPGN(127245);
     double radRudderAngle = state->rudderAngle.value / 180.0 * 3.141592;
