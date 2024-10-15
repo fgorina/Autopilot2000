@@ -453,9 +453,9 @@ void handleNavigationInfo(const tN2kMsg &N2kMsg)
     Serial.print("ETADate: ");
     Serial.println(ETADate);
     Serial.print("BearingOriginToDestinationWaypoint: ");
-    Serial.println(BearingOriginToDestinationWaypoint, 4);
+    Serial.println(BearingOriginToDestinationWaypoint / 3.14192 * 180.0, 4);
     Serial.print("BearingPositionToDestinationWaypoint: ");
-    Serial.println(BearingPositionToDestinationWaypoint, 4);
+    Serial.println(BearingPositionToDestinationWaypoint / 3.14192 * 180.0, 4);
     Serial.print("OriginWaypointNumber: ");
     Serial.println(OriginWaypointNumber);
     Serial.print("DestinationWaypointNumber: ");
