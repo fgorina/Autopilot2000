@@ -134,6 +134,11 @@ void PyPilot::pypilot_send_mode(tPyPilotMode mode)
                  pypClient.c.println(F("ap.mode=\"true wind\""));
                  break;
            
+           case tPyPilotMode::nav:
+                // Usually will send magnetic or gps
+                // I really prefer magnetic but some doubts
+                 pypClient.c.println(F("ap.mode=\"compass\""));
+                 break;
 
         }
         pypClient.c.flush();
@@ -200,6 +205,7 @@ void PyPilot::pypilot_send_mode(tPyPilotMode mode)
         String mode = dataFeed.substring(strlen("ap.mode=\""), dataFeed.length() - 1);
         Serial.print("Received "); Serial.println(mode);
 
+        if(oldMode != tPyPilotMode::nav){
         if (mode == "gps") {
           setPypilotMode(tPyPilotMode::gps, tDataOrigin::PYPILOT);
         } else if (mode == "wind") {
@@ -208,6 +214,7 @@ void PyPilot::pypilot_send_mode(tPyPilotMode mode)
          setPypilotMode(tPyPilotMode::compass, tDataOrigin::PYPILOT);
         } else if (mode == "true wind") {
           setPypilotMode(tPyPilotMode::trueWind, tDataOrigin::PYPILOT);
+        }
         }
         
       } else if (dataFeed.startsWith("servo.voltage=")) {
@@ -403,6 +410,10 @@ tRaymarineMode PyPilot::pyPilot2RaymarineMode(tPyPilotMode rmode)
         return tRaymarineMode::NoDrift; // ???        
         break;
 
+    case tPyPilotMode::nav:
+        return tRaymarineMode::Track;
+        break;
+
     default:
         return tRaymarineMode::Standby;
 
@@ -423,7 +434,7 @@ tPyPilotMode PyPilot::raymarine2PyPilotMode(tRaymarineMode rmode)
         return tPyPilotMode::wind;
 
     case tRaymarineMode::Track:
-        return tPyPilotMode::compass;
+        return tPyPilotMode::nav;
 
     case tRaymarineMode::NoDrift:
         return tPyPilotMode::gps;
@@ -441,6 +452,7 @@ void PyPilot::setRudderAngle(double angle, tDataOrigin from)
     state->rudderAngle.origin = from;
     state->rudderAngle.when = millis();
 
+ 
     if (from == tDataOrigin::PYPILOT)
     {
         sendRudder(nmea2000);
@@ -458,7 +470,7 @@ void PyPilot::setEngaged(bool eng, tDataOrigin from)
         if (eng){
             pypilot_send_engage();
         }else{
-            pypilot_send_engage();
+            pypilot_send_disengage();
         }
        
     }
@@ -579,14 +591,14 @@ void PyPilot::setHeading(double angle, tN2kHeadingReference ref, tDataOrigin fro
 
 void PyPilot::setVariation(double angle, tDataOrigin from)
 {
-    state->variation.value = angle;
+    state->variation.value = angle / 3.141592 * 180.0;
     state->variation.origin = from;
     state->variation.when = millis();
 }
 
 void PyPilot::setDeviation(double angle, tDataOrigin from)
 {
-    state->deviation.value = angle;
+    state->deviation.value = angle / 3.141592 * 180.0;
     state->deviation.origin = from;
     state->deviation.when = millis();
 }
@@ -626,8 +638,10 @@ void PyPilot::setCommandHeadingTrue(double heading, tDataOrigin from)
     if (from != tDataOrigin::PYPILOT)
     {
         Serial.print("Receiving command heading from NMEA to (true) ");
-        Serial.println(heading);
-        pypilot_send_command(heading);
+        Serial.print(heading);
+        Serial.print(" Magnetic ");
+        Serial.println(heading - state->variation.value);  // We translate according variation. 
+        pypilot_send_command(heading - state->variation.value);
         // Send to PyPilot
     }
     else
@@ -699,11 +713,13 @@ void PyPilot::sendRudder(tNMEA2000 *NMEA2000)
 {
     tN2kMsg N2kMsg;
     N2kMsg.SetPGN(127245);
-    double radRudderAngle = state->rudderAngle.value / 180.0 * 3.141592;
+    //Serial.print("Rudder Angle "); Serial.println(state->rudderAngle.value );
 
+    double radRudderAngle = state->rudderAngle.value / 180.0 * 3.141592;
+    N2kMsg.AddByte(1); // Instance. Only one rudder  
     N2kMsg.AddByte(0);                    // No rudder order
-    N2kMsg.Add2ByteUDouble(-1E9, 0.0001); // Rudder Order
-    N2kMsg.Add2ByteUDouble(radRudderAngle, 0.0001);
+    N2kMsg.Add2ByteDouble(-1E9, 0.0001); // Rudder Order
+    N2kMsg.Add2ByteDouble(radRudderAngle, 0.0001);
     N2kMsg.Add2ByteUInt(0); // Reserved
 
     NMEA2000->SendMsg(N2kMsg);

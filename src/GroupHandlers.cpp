@@ -215,6 +215,7 @@ bool tN2kGroupFunctionHandlerForPGN65379::HandleCommand(const tN2kMsg &N2kMsg, u
 
   if (PARec == N2kgfpec_Acknowledge)
   {
+    
     pypilot->setRaymarineMode(tRaymarineMode(raymarineMode), tDataOrigin::kNMEA2000);
   }
 

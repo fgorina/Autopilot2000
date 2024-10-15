@@ -6,7 +6,8 @@ typedef enum  {
     compass = 0,
     gps = 1,
     wind = 2,
-    trueWind = 3
+    trueWind = 3,
+    nav = 4 // Not really a PyPilot but simulated here
 } tPyPilotMode;
 
 typedef enum  {

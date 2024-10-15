@@ -14,16 +14,16 @@
 // KLey Definition
 enum key_codes
 {
-  KEY_STANDBY = 0x02FD,
-  KEY_AUTO = 0x01FE,
-  KEY_WIND = 0x23DC,
-  KEY_AUTOTRACK = 0x03FC,
-  KEY_PLUS_1 = 0x07f8,
-  KEY_PLUS_10 = 0x08f7,
-  KEY_MINUS_1 = 0x05fa,
-  KEY_MINUS_10 = 0x06f9,
-  KEY_MINUS_1_MINUS_10 = 0x21de,
-  KEY_PLUS_1_PLUS_10 = 0x22dd,
+  KEY_STANDBY = 0x02,          // FD,
+  KEY_AUTO = 0x01,             // FE,
+  KEY_WIND = 0x23,             // DC,
+  KEY_AUTOTRACK = 0x03,        // FC,
+  KEY_PLUS_1 = 0x07,           // f8,
+  KEY_PLUS_10 = 0x08,          // f7,
+  KEY_MINUS_1 = 0x05,          // fa,
+  KEY_MINUS_10 = 0x06,         // f9,
+  KEY_MINUS_1_MINUS_10 = 0x21, // de,
+  KEY_PLUS_1_PLUS_10 = 0x22,   // dd,
   KEY_TACK_PORTSIDE = KEY_MINUS_1_MINUS_10,
   KEY_TACK_STARBORD = KEY_PLUS_1_PLUS_10
 };
@@ -205,7 +205,7 @@ void ListDevices(bool force = false)
 // IsDefaultFastPacketMessage) and message first start offsets. Use a bit different offset for
 // each message so they will not be sent at same time.
 tN2kSyncScheduler NavigationDataScheduler(false, 100, 500);
-tN2kSyncScheduler RudderAngleScheduler(false, 500, 510); // Perhaps shopuld be 100?
+tN2kSyncScheduler RudderAngleScheduler(false, 100, 510); // Perhaps shopuld be 100?
 tN2kSyncScheduler BatConfScheduler(false, 5000, 520);    // Non periodic
 
 // *****************************************************************************
@@ -240,7 +240,7 @@ void setup_NMEA2000()
   // If you also want to see all traffic on theTransmitTransmit  bus use N2km_ListenAndNode instead of N2km_NodeOnly below
   NMEA2000.SetMode(tNMEA2000::N2km_ListenAndNode, 25);
   // NMEA2000.SetDebugMode(tNMEA2000::dm_ClearText);  ttttrtt   // Uncomment this, so you can test code without CAN bus chips on Arduino Mega
-  NMEA2000.EnableForward(true); // Disable all msg forwarding to USB (=Serial)
+  NMEA2000.EnableForward(false); // Disable all msg forwarding to USB (=Serial)
 
   //  NMEA2000.SetN2kCANMsgBufSize(2);                    // For this simple example, limit buffer size to 2, since we are only sending data
   // Define OnOpen call back. This will be called, when CAN is open and system starts address claiming.
@@ -351,13 +351,14 @@ void handleHeadingTrackControl(const tN2kMsg &N2kMsg)
                                   OffHeadingLimit, RadiusOfTurnOrder, RateOfTurnOrder, OffTrackLimit, VesselHeading))
 
   {
-    Serial.print("Received Heading Track control Packet (127237)");
-    Serial.print(" from: ");
-    Serial.println(N2kMsg.Source);
+
     if (!verbose)
     {
       return;
     }
+    Serial.print("Received Heading Track control Packet (127237)");
+    Serial.print(" from: ");
+    Serial.println(N2kMsg.Source);
     Serial.print("Rudder limit exceeded: ");
     Serial.println(onOffValues[RudderLimitExceeded]);
     Serial.print("Off heading limit exceeded: ");
@@ -427,13 +428,14 @@ void handleNavigationInfo(const tN2kMsg &N2kMsg)
                              ETATime, ETADate, BearingOriginToDestinationWaypoint, BearingPositionToDestinationWaypoint,
                              OriginWaypointNumber, DestinationWaypointNumber, DestinationLatitude, DestinationLongitude, WaypointClosingVelocity))
   {
-    Serial.print("Received Navigation Data Packet (129284)");
-    Serial.print(" from: ");
-    Serial.println(N2kMsg.Source);
+
     if (!verbose)
     {
       return;
     }
+    Serial.print("Received Navigation Data Packet (129284)");
+    Serial.print(" from: ");
+    Serial.println(N2kMsg.Source);
     Serial.print("SID: ");
     Serial.println(SID);
     Serial.print("DistanceToWaypoint: ");
@@ -451,20 +453,32 @@ void handleNavigationInfo(const tN2kMsg &N2kMsg)
     Serial.print("ETADate: ");
     Serial.println(ETADate);
     Serial.print("BearingOriginToDestinationWaypoint: ");
-    Serial.println(BearingOriginToDestinationWaypoint);
+    Serial.println(BearingOriginToDestinationWaypoint, 4);
     Serial.print("BearingPositionToDestinationWaypoint: ");
-    Serial.println(BearingPositionToDestinationWaypoint);
+    Serial.println(BearingPositionToDestinationWaypoint, 4);
     Serial.print("OriginWaypointNumber: ");
     Serial.println(OriginWaypointNumber);
     Serial.print("DestinationWaypointNumber: ");
     Serial.println(DestinationWaypointNumber);
     Serial.print("DestinationLatitude: ");
-    Serial.println(DestinationLatitude);
+    Serial.println(DestinationLatitude, 6);
     Serial.print("DestinationLongitude: ");
-    Serial.println(DestinationLongitude);
+    Serial.println(DestinationLongitude, 6);
     Serial.print("WaypointClosingVelocity: ");
     Serial.println(WaypointClosingVelocity);
     Serial.println("------------------------------------------------------------------------------");
+
+    if (pypilot.state->mode.value == tPyPilotMode::nav)
+    {
+      if (BearingReference == tN2kHeadingReference::N2khr_magnetic)
+      {
+        pypilot.setCommandHeadingMagnetic(BearingOriginToDestinationWaypoint / 3.141592 * 180.0, tDataOrigin::kNMEA2000);
+      }
+      else
+      { // True
+        pypilot.setCommandHeadingTrue(BearingPositionToDestinationWaypoint / 3.141592 * 180.0, tDataOrigin::kNMEA2000);
+      }
+    }
   }
 }
 void handleXTE(const tN2kMsg &N2kMsg)
@@ -477,13 +491,14 @@ void handleXTE(const tN2kMsg &N2kMsg)
 
   if (ParseN2kXTE(N2kMsg, SID, XTEMode, NavigationTerminated, XTE))
   {
-    Serial.print("Received XTE  Packet (129283)");
-    Serial.print(" from: ");
-    Serial.println(N2kMsg.Source);
+
     if (!verbose)
     {
       return;
     }
+    Serial.print("Received XTE  Packet (129283)");
+    Serial.print(" from: ");
+    Serial.println(N2kMsg.Source);
     Serial.print("    SID: ");
     Serial.println(SID);
     Serial.print("    XTEMode: ");
@@ -510,13 +525,14 @@ void handleRouteInfo(const tN2kMsg &N2kMsg)
 
   if (ParseN2kPGN129285(N2kMsg, Start, nItems, Database, Route, NavDirection, RouteName, 20, SupplementaryData, 10, waypoints))
   {
-    Serial.print("Received Route Packet (129285)");
-    Serial.print(" from: ");
-    Serial.println(N2kMsg.Source);
+
     if (!verbose)
     {
       return;
     }
+    Serial.print("Received Route Packet (129285)");
+    Serial.print(" from: ");
+    Serial.println(N2kMsg.Source);
     Serial.print("Start: ");
     Serial.println(Start);
     Serial.print("nItems: ");
@@ -539,9 +555,9 @@ void handleRouteInfo(const tN2kMsg &N2kMsg)
       Serial.print(" ");
       Serial.print(waypoints[i].name);
       Serial.print(" Lat ");
-      Serial.print(waypoints[i].latitude);
+      Serial.print(waypoints[i].latitude, 6);
       Serial.print(" Lon ");
-      Serial.println(waypoints[i].longitude);
+      Serial.println(waypoints[i].longitude, 6);
     }
   }
 }
@@ -586,7 +602,7 @@ void handleMagneticVariation(const tN2kMsg &N2kMsg)
   pypilot.setVariation(Variation, tDataOrigin::kNMEA2000);
 }
 
-void processKey(uint16_t key)
+void processKey(unsigned char key)
 {
   switch (key)
   {
@@ -690,10 +706,14 @@ void handleKey(const tN2kMsg &N2kMsg)
   if (manufacturer = AutopilotManufacturerCode)
   {
     propietaryCode = N2kMsg.Get2ByteUInt(Index);
+    Serial.print("Propietary Code ");
+    Serial.println(propietaryCode);
 
     if (propietaryCode == 33264)
     {
       command = N2kMsg.GetByte(Index);
+      Serial.print("Command ");
+      Serial.println(command);
       if (command == 132)
       {
         // Set Mode
@@ -704,7 +724,7 @@ void handleKey(const tN2kMsg &N2kMsg)
         Serial.print("Device ");
         Serial.println(device);
 
-        key = N2kMsg.Get2ByteUInt(Index);
+        key = N2kMsg.GetByte(Index);
         Serial.print("Key: ");
         Serial.println(key);
         processKey(key);
@@ -715,39 +735,39 @@ void handleKey(const tN2kMsg &N2kMsg)
 
 void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
 {
-  if (!analyze)
-  {
-    return;
-  }
 
   switch (N2kMsg.PGN)
   {
 
   case 127245:
-    Serial.println("Received rudder angle info (127245  )");
+    // Serial.println("Received rudder angle info (127245  )");
     handleRudderCommand(N2kMsg);
     break;
 
   case 127250:
-    Serial.println("Received heading (127250)");
+    // Serial.println("Received heading (127250)");
     handleHeading(N2kMsg);
     break;
 
   case 127258:
-    Serial.println("Received Magnetic Variation (127258)");
+    // Serial.println("Received Magnetic Variation (127258)");
     handleMagneticVariation(N2kMsg);
     break;
 
   case 128259:
-    Serial.println("Received water speed (127259)");
+    // Serial.println("Received water speed (127259)");
+    break;
+
+  case 12902:
+    // Serial.println("Received Position (129025)");
     break;
 
   case 129026:
-    Serial.println("Received COG/SOG (129026)");
+    // Serial.println("Received COG/SOG (129026)");
     break;
 
   case 129029:
-    Serial.println("Received GNSS/position (129029)");
+    // Serial.println("Received GNSS/position (129029)");
     break;
 
   case 129283:
@@ -761,7 +781,7 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
     handleRouteInfo(N2kMsg);
     break;
   case 130306:
-    Serial.println("Received wind data (130306)");
+    // Serial.println("Received wind data (130306)");
     break;
 
   case 127237:
@@ -769,7 +789,7 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
     break;
 
   case 126720:
-  handleKey(N2kMsg);
+    handleKey(N2kMsg);
     break;
 
   case 61184:
@@ -777,8 +797,11 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
     break;
 
   default:
-    Serial.print("Received unknown message ");
-    Serial.println(N2kMsg.PGN);
+    if (analyze)
+    {
+      Serial.print("Received unknown message ");
+      Serial.println(N2kMsg.PGN);
+    }
   }
 }
 
@@ -831,7 +854,7 @@ void loop()
        case 115:
          sendAutopilotMessage();
          StickCP2.Display.clear();
-         StickCP2.Display.setCursor(10, 30);
+         StickCP2.Display.setCursor(10, 30);aa
          StickCP2.Display.printf("Sent autopilot");
          Serial.println("Sent autopilot message");
          break;
