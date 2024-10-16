@@ -44,8 +44,9 @@ void PyPilot::pypilot_send_engage()
     {
         pypClient.c.println(F("ap.enabled=true"));
         pypClient.c.flush();
+        pypilot_send_mode(state->mode.value);
     }
-    pypilot_send_mode(state->mode.value);
+    
 }
 
 void PyPilot::pypilot_send_disengage()
@@ -136,8 +137,9 @@ void PyPilot::pypilot_send_mode(tPyPilotMode mode)
                  break;
            
            case tPyPilotMode::nav:
-                // Usually will send magnetic or gps
-                // I really prefer magnetic but some doubts
+                // Send compass. Orca or Nav Computer sends headings that are converted
+                // to magnetic headings. Seems to work best
+
                  pypClient.c.println(F("ap.mode=\"compass\""));
                  break;
 
@@ -637,6 +639,10 @@ void PyPilot::setCommandHeadingTrue(double heading, tDataOrigin from)
     state->headingCommandTrue.value = heading;
     state->headingCommandTrue.origin = from;
     state->headingCommandTrue.when = millis();
+
+    state->headingCommandMagnetic.value = heading  - state->variation.value;
+    state->headingCommandMagnetic.origin = from;
+    state->headingCommandMagnetic.when = millis();
    
     if (from != tDataOrigin::PYPILOT)
     {

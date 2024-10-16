@@ -494,7 +494,7 @@ bool tN2kGroupFunctionHandlerForPGN65360::HandleCommand(const tN2kMsg &N2kMsg, u
 
   if (PARec == N2kgfpec_Acknowledge)
   {
-     Serial.print("Setting true heading to ");
+      Serial.print("Setting true heading to ");
       Serial.println(trueHeading);
       pypilot->setCommandHeadingTrue(trueHeading, tDataOrigin::kNMEA2000);
 
