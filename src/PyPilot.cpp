@@ -476,8 +476,7 @@ void PyPilot::setEngaged(bool eng, tDataOrigin from)
             pypilot_send_engage();
         }else{
             pypilot_send_disengage();
-        }
-       
+        }     
     }
     else
     {
@@ -507,6 +506,11 @@ void PyPilot::setRaymarineMode(tRaymarineMode rmode, tDataOrigin from)
     if (rmode == tRaymarineMode::Standby)
     {
         setEngaged(false, from);
+        if (state->mode.value == tPyPilotMode::nav){  // nav mode does not really exist
+            state->mode.value = tPyPilotMode::compass;
+            state->mode.origin = tDataOrigin::kNMEA2000;
+            state->mode.when = millis();
+        }
         Serial.println("Received Standby. from NMEA Setting Engaged = false");
     }
     else
@@ -742,6 +746,7 @@ void PyPilot::sendLockedHeading(tNMEA2000 *NMEA2000)
 {
     Serial.print("Sending locked heading of ");
     Serial.println(state->headingCommandMagnetic.value);
+    Serial.println("------------------------------------------------------------------------------");
     tN2kMsg N2kMsg;
     N2kMsg.SetPGN(65360);
     double radLockedHeadingTrue = state->headingCommandTrue.value / 180.0 * 3.141592;

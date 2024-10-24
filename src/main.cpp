@@ -429,7 +429,7 @@ void handleNavigationInfo(const tN2kMsg &N2kMsg)
                              OriginWaypointNumber, DestinationWaypointNumber, DestinationLatitude, DestinationLongitude, WaypointClosingVelocity))
   {
 
-    if (!verbose)
+    if (!verbose && pypilot.state->mode.value != tPyPilotMode::nav)
     {
       return;
     }
@@ -472,11 +472,13 @@ void handleNavigationInfo(const tN2kMsg &N2kMsg)
     {
       if (BearingReference == tN2kHeadingReference::N2khr_magnetic)
       {
-        pypilot.setCommandHeadingMagnetic(BearingOriginToDestinationWaypoint / 3.141592 * 180.0, tDataOrigin::kNMEA2000);
+        pypilot.setCommandHeadingMagnetic(BearingPositionToDestinationWaypoint / 3.141592 * 180.0, tDataOrigin::kNMEA2000);
+        pypilot.sendLockedHeading(&NMEA2000);
       }
       else
       { // True
         pypilot.setCommandHeadingTrue(BearingPositionToDestinationWaypoint / 3.141592 * 180.0, tDataOrigin::kNMEA2000);
+        pypilot.sendLockedHeading(&NMEA2000);
       }
     }
   }
@@ -492,8 +494,12 @@ void handleXTE(const tN2kMsg &N2kMsg)
   if (ParseN2kXTE(N2kMsg, SID, XTEMode, NavigationTerminated, XTE))
   {
 
-    if (!verbose)
-    {
+    if(pypilot.state->mode.value == tPyPilotMode::nav && NavigationTerminated){
+      pypilot.setRaymarineMode(tRaymarineMode::Standby, tDataOrigin::kNMEA2000);nmea2000
+      pypilot.sendPilotMode(&NMEA2000);
+    }
+
+    if (!verbose)nmea2000
       return;
     }
     Serial.print("Received XTE  Packet (129283)");
@@ -526,7 +532,7 @@ void handleRouteInfo(const tN2kMsg &N2kMsg)
   if (ParseN2kPGN129285(N2kMsg, Start, nItems, Database, Route, NavDirection, RouteName, 20, SupplementaryData, 10, waypoints))
   {
 
-    if (!verbose)
+    if (!verbose && pypilot.state->mode.value != tPyPilotMode::nav)
     {
       return;
     }
