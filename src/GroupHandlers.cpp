@@ -130,6 +130,8 @@ bool tN2kGroupFunctionHandlerForPGN65379::HandleRequest(const tN2kMsg &N2kMsg,
     // Must Send PGN
     Serial.println("Sending mode");
     pypilot->sendPilotMode(pNMEA2000); // perhaps use iDev as second parameter???
+
+    Serial.print("Requested every "); Serial.println(TransmissionInterval);
   }
 
   return true;
@@ -148,7 +150,7 @@ bool tN2kGroupFunctionHandlerForPGN65379::HandleCommand(const tN2kMsg &N2kMsg, u
   tN2kGroupFunctionParameterErrorCode PARec;
   bool MatchFilter = true;
   tN2kMsg N2kRMsg;
-  Serial.println("Received Group command");
+  Serial.println("Received AP Mode command");
   SetStartAcknowledge(N2kRMsg, N2kMsg.Source, PGN,
                       N2kgfPGNec_Acknowledge, // What we actually should response as PGN error, if we have invalid field?
                       pec,
@@ -247,6 +249,7 @@ bool tN2kGroupFunctionHandlerForPGN127250::HandleRequest(const tN2kMsg &N2kMsg,
   // Must Send PGN
 
   pypilot->sendVesselHeading(pNMEA2000); // perhaps use iDev as second parameter???
+  Serial.print("Requested every "); Serial.println(TransmissionInterval);
 
   return true;
 }
@@ -275,6 +278,7 @@ bool tN2kGroupFunctionHandlerForPGN127245::HandleRequest(const tN2kMsg &N2kMsg,
   // Must Send PGN
 
   pypilot->sendVesselHeading(pNMEA2000); // perhaps use iDev as second parameter???
+  Serial.print("Requested every "); Serial.println(TransmissionInterval);
 
   return true;
 }
@@ -409,6 +413,7 @@ bool tN2kGroupFunctionHandlerForPGN65360::HandleRequest(const tN2kMsg &N2kMsg,
     // Must Send PGN
 
     pypilot->sendLockedHeading(pNMEA2000); // perhaps use iDev as second parameter???
+    Serial.print("Requested every "); Serial.println(TransmissionInterval);
   }
   return true;
 }
@@ -425,7 +430,7 @@ bool tN2kGroupFunctionHandlerForPGN65360::HandleCommand(const tN2kMsg &N2kMsg, u
   tN2kGroupFunctionParameterErrorCode PARec;
   bool MatchFilter = true;
   tN2kMsg N2kRMsg;
-  Serial.println("Received Group command");
+  Serial.println("Received Locked Heading command");
   SetStartAcknowledge(N2kRMsg, N2kMsg.Source, PGN,
                       N2kgfPGNec_Acknowledge, // What we actually should response as PGN error, if we have invalid field?
                       pec,
@@ -539,7 +544,7 @@ bool tN2kGroupFunctionHandlerForPGN65345::HandleRequest(const tN2kMsg &N2kMsg,
   bool MatchFilter = true;
   tN2kMsg N2kRMsg;
 
-  Serial.println("Received Locked Heading Request");
+  Serial.println("Received Wind Datum Request");
   // Start to build response
   SetStartAcknowledge(N2kRMsg, N2kMsg.Source, PGN,
                       N2kgfPGNec_Acknowledge, // Always acknowledge for mandatory PGN
@@ -641,6 +646,7 @@ bool tN2kGroupFunctionHandlerForPGN65345::HandleRequest(const tN2kMsg &N2kMsg,
     // Must Send PGN
 
     pypilot->sendWindDatum(pNMEA2000); // perhaps use iDev as second parameter???
+    Serial.print("Requested every "); Serial.println(TransmissionInterval);
   }
   return true;
 }

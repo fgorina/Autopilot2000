@@ -10,6 +10,7 @@
 #include "N2kDeviceList.h"
 #include "GroupHandlers.h"
 #include "State.h"
+#include "pgnsToString.h"
 
 // KLey Definition
 enum key_codes
@@ -204,9 +205,9 @@ void ListDevices(bool force = false)
 // Setup periods according PGN definition (see comments on IsDefaultSingleFrameMessage and
 // IsDefaultFastPacketMessage) and message first start offsets. Use a bit different offset for
 // each message so they will not be sent at same time.
-tN2kSyncScheduler NavigationDataScheduler(false, 100, 500);
+tN2kSyncScheduler APModeScheduler(false, 200, 1000);
 tN2kSyncScheduler RudderAngleScheduler(false, 100, 510); // Perhaps shopuld be 100?
-tN2kSyncScheduler BatConfScheduler(false, 5000, 520);    // Non periodic
+tN2kSyncScheduler LockedHeadingDataScheduler(false, 3000, 1000);    // Non periodic
 
 // *****************************************************************************
 // Call back for NMEA2000 open. This will be called, when library starts bus communication.
@@ -214,9 +215,9 @@ tN2kSyncScheduler BatConfScheduler(false, 5000, 520);    // Non periodic
 void OnN2kOpen()
 {
   // Start schedulers now.
-  // NavigationDataScheduler.UpdateNextTime();
+  APModeScheduler.UpdateNextTime();
   RudderAngleScheduler.UpdateNextTime();
-  // BatConfScheduler.UpdateNextTime();
+  LockedHeadingDataScheduler.UpdateNextTime();
 }
 
 void setup_NMEA2000()
@@ -264,11 +265,6 @@ void setup_NMEA2000()
 
 void setup()
 {
-
-  // pinMode(V_PIN, INPUT_PULLUP);
-  //  pinMode(ESP32_CAN_TX_PIN, OUTPUT);
-  //  pinMode(ESP32_CAN_RX_PIN, INPUT_PULLUP);
-  //   NMEA2000 Config
 
   setup_NMEA2000();
   pypilot.set_nmea(&NMEA2000);
@@ -495,11 +491,11 @@ void handleXTE(const tN2kMsg &N2kMsg)
   {
 
     if(pypilot.state->mode.value == tPyPilotMode::nav && NavigationTerminated){
-      pypilot.setRaymarineMode(tRaymarineMode::Standby, tDataOrigin::kNMEA2000);nmea2000
+      pypilot.setRaymarineMode(tRaymarineMode::Standby, tDataOrigin::kNMEA2000);
       pypilot.sendPilotMode(&NMEA2000);
     }
 
-    if (!verbose)nmea2000
+    if (!verbose){
       return;
     }
     Serial.print("Received XTE  Packet (129283)");
@@ -805,8 +801,10 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
   default:
     if (analyze)
     {
-      Serial.print("Received unknown message ");
-      Serial.println(N2kMsg.PGN);
+      Serial.print("Received PGN ");
+      Serial.print(N2kMsg.PGN);
+      Serial.print(" ");
+      Serial.println(toStringPgn(N2kMsg.PGN));
     }
   }
 }
@@ -820,11 +818,33 @@ void SendN2kRudder() // It is sent every 100ms
     pypilot.sendRudder(&NMEA2000);
   }
 }
+void SendModeData() // It is sent every 100ms
+{
+  tN2kMsg N2kMsg;
+  if (APModeScheduler.IsTime())
+  {
+    APModeScheduler.UpdateNextTime();
+    pypilot.sendPilotMode(&NMEA2000);
+   
+  }
+}
+void SendLockedHeadingData() // It is sent every 100ms
+{
+  tN2kMsg N2kMsg;
+  if (LockedHeadingDataScheduler.IsTime())
+  {
+    LockedHeadingDataScheduler.UpdateNextTime();
 
+    pypilot.sendLockedHeading(&NMEA2000);
+  }
+}
 void loop()
 {
 
   SendN2kRudder();
+  SendModeData();
+  SendLockedHeadingData();
+
   NMEA2000.ParseMessages();
   ListDevices();
 
