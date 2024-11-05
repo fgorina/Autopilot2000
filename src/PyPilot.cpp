@@ -699,8 +699,8 @@ void PyPilot::sendPilotMode(tNMEA2000 *NMEA2000)
     N2kMsg.AddByte(0x47);
 
     uint16_t rmode = pyPilot2RaymarineMode(state->mode.value);
-    Serial.print("Sending mode of ");
-    Serial.println(rmode);
+    //Serial.print("Sending mode of ");
+    //Serial.println(rmode);
 
     N2kMsg.Add2ByteUInt(rmode); // mode
     N2kMsg.Add2ByteUInt(0L);    // submode
@@ -744,9 +744,9 @@ void PyPilot::sendRudder(tNMEA2000 *NMEA2000)
 
 void PyPilot::sendLockedHeading(tNMEA2000 *NMEA2000)
 {
-    Serial.print("Sending locked heading of ");
-    Serial.println(state->headingCommandMagnetic.value);
-    Serial.println("------------------------------------------------------------------------------");
+    //Serial.print("Sending locked heading of ");
+    //Serial.println(state->headingCommandMagnetic.value);
+    //Serial.println("------------------------------------------------------------------------------");
     tN2kMsg N2kMsg;
     N2kMsg.SetPGN(65360);
     double radLockedHeadingTrue = state->headingCommandTrue.value / 180.0 * 3.141592;

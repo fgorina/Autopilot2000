@@ -206,7 +206,7 @@ void ListDevices(bool force = false)
 // IsDefaultFastPacketMessage) and message first start offsets. Use a bit different offset for
 // each message so they will not be sent at same time.
 tN2kSyncScheduler APModeScheduler(false, 200, 1000);
-tN2kSyncScheduler RudderAngleScheduler(false, 100, 510); // Perhaps shopuld be 100?
+tN2kSyncScheduler RudderAngleScheduler(false, 100, 100); // Perhaps shopuld be 100?
 tN2kSyncScheduler LockedHeadingDataScheduler(false, 3000, 1000);    // Non periodic
 
 // *****************************************************************************
@@ -564,6 +564,23 @@ void handleRouteInfo(const tN2kMsg &N2kMsg)
   }
 }
 
+void handleWind(const tN2kMsg &N2kMsg){
+  double windSpeed;
+  double windAngle;
+  unsigned char SID;
+  tN2kWindReference windReference;
+
+  ParseN2kPGN130306(N2kMsg, SID, windSpeed, windAngle, windReference);
+
+  Serial.print("Source ");
+  Serial.print(N2kMsg.Source);
+  Serial.print(" Wind Angle ");
+  Serial.print(windAngle / 3.141592 * 180.0);
+  Serial.print(" Wind Speed ");
+  Serial.print(windSpeed / 1852.0 * 3600.0);
+  Serial.print(" reference ");
+  Serial.println(windReference);
+  }
 void handleRudderCommand(const tN2kMsg &N2kMsg)
 {
 
@@ -782,9 +799,7 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
   case 129285:
     handleRouteInfo(N2kMsg);
     break;
-  case 130306:
-    // Serial.println("Received wind data (130306)");
-    break;
+
 
   case 127237:
     handleHeadingTrackControl(N2kMsg);
@@ -796,6 +811,11 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
 
   case 61184:
     Serial.println("Received remote command");
+    break;
+
+  case 130306:
+
+    handleWind(N2kMsg);
     break;
 
   default:
