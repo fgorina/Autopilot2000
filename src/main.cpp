@@ -4,6 +4,8 @@
 
 #define V_PIN GPIO_NUM_36
 
+#define BLE_LED 2
+
 #include <NMEA2000_esp32.h>
 #include <NMEA2000_CAN.h>
 #include <N2kMessages.h>
@@ -100,6 +102,8 @@ bool verbose = false;
 bool analyze = false;
 
 PyPilot &pypilot = *(new PyPilot());
+
+int ledState = 0;
 
 void HandleNMEA2000Msg(const tN2kMsg &N2kMsg);
 
@@ -199,6 +203,22 @@ void ListDevices(bool force = false)
   }
 }
 
+
+void toggleLed()
+{
+
+  if (ledState == 0)
+  {
+    ledState = 1;
+  }
+  else
+  {
+    ledState = 0;
+  }
+
+  digitalWrite(BLE_LED, ledState);
+  
+}
 // Define schedulers for messages. Define schedulers here disabled. Schedulers will be enabled
 // on OnN2kOpen so they will be synchronized with system.
 // We use own scheduler for each message so that each can have different offset and period.
@@ -265,7 +285,7 @@ void setup_NMEA2000()
 
 void setup()
 {
-
+  pinMode(BLE_LED, OUTPUT);
   setup_NMEA2000();
   pypilot.set_nmea(&NMEA2000);
   pypilot.pypilot_begin("Yamato", "ailataN1991");
