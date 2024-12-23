@@ -295,7 +295,7 @@ boolean PyPilot::startWiFi()
         Serial.print(" IP ");
         Serial.println(WiFi.localIP());
 
-        lookupPypilot(this);
+        //lookupPypilot(this);
 
         /*
         M5Dial.Display.clear(BLACK);
@@ -381,6 +381,7 @@ void PyPilot::pypilot_one_pass()
         else // Connect to PyPilot and subscribne
         {
             setKeepAlive();
+            lookupPypilot(this);
             if (pypClient.c.connect(pyp_host, pyp_port, 200))
             {
                 Serial.println("Reconnected to pypilot");

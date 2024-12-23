@@ -226,7 +226,7 @@ void toggleLed()
 // IsDefaultFastPacketMessage) and message first start offsets. Use a bit different offset for
 // each message so they will not be sent at same time.
 tN2kSyncScheduler APModeScheduler(false, 200, 1000);
-tN2kSyncScheduler RudderAngleScheduler(false, 100, 100); // Perhaps shopuld be 100?
+tN2kSyncScheduler RudderAngleScheduler(false, 100, 100); // Perhaps should be 100?
 tN2kSyncScheduler LockedHeadingDataScheduler(false, 3000, 1000);    // Non periodic
 
 // *****************************************************************************
@@ -886,7 +886,7 @@ void loop()
   SendLockedHeadingData();
 
   NMEA2000.ParseMessages();
-  ListDevices();
+ // ListDevices();
 
   if (Serial.available() > 0)
   {
