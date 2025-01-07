@@ -225,9 +225,9 @@ void toggleLed()
 // Setup periods according PGN definition (see comments on IsDefaultSingleFrameMessage and
 // IsDefaultFastPacketMessage) and message first start offsets. Use a bit different offset for
 // each message so they will not be sent at same time.
-tN2kSyncScheduler APModeScheduler(false, 200, 1000);
+tN2kSyncScheduler APModeScheduler(false, 500, 1000);
 tN2kSyncScheduler RudderAngleScheduler(false, 100, 100); // Perhaps should be 100?
-tN2kSyncScheduler LockedHeadingDataScheduler(false, 3000, 1000);    // Non periodic
+tN2kSyncScheduler LockedHeadingDataScheduler(false, 1000, 500);    // Non periodic
 
 // *****************************************************************************
 // Call back for NMEA2000 open. This will be called, when library starts bus communication.
@@ -797,7 +797,7 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
     // Serial.println("Received water speed (127259)");
     break;
 
-  case 12902:
+  case 129025:
     // Serial.println("Received Position (129025)");
     break;
 
@@ -816,10 +816,10 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
   case 129284:
     handleNavigationInfo(N2kMsg);
     break;
+
   case 129285:
     handleRouteInfo(N2kMsg);
     break;
-
 
   case 127237:
     handleHeadingTrackControl(N2kMsg);
@@ -834,7 +834,6 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
     break;
 
   case 130306:
-
     handleWind(N2kMsg);
     break;
 

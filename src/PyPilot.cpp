@@ -506,12 +506,13 @@ void PyPilot::setRaymarineMode(tRaymarineMode rmode, tDataOrigin from)
 
     if (rmode == tRaymarineMode::Standby)
     {
-        setEngaged(false, from);
+       
         if (state->mode.value == tPyPilotMode::nav){  // nav mode does not really exist
             state->mode.value = tPyPilotMode::compass;
             state->mode.origin = tDataOrigin::kNMEA2000;
             state->mode.when = millis();
         }
+        setEngaged(false, from);
         Serial.println("Received Standby. from NMEA Setting Engaged = false");
     }
     else
@@ -654,8 +655,8 @@ void PyPilot::setCommandHeadingTrue(double heading, tDataOrigin from)
         Serial.print("Receiving command heading from NMEA to (true) ");
         Serial.print(heading);
         Serial.print(" Magnetic ");
-        Serial.println(heading - state->variation.value);  // We translate according variation. 
-        pypilot_send_command(heading - state->variation.value);
+        Serial.println(state->headingCommandMagnetic.value);  // We translate according variation. 
+        pypilot_send_command(state->headingCommandMagnetic.value);
         // Send to PyPilot
     }
     else
@@ -737,7 +738,7 @@ void PyPilot::sendRudder(tNMEA2000 *NMEA2000)
     N2kMsg.AddByte(1); // Instance. Only one rudder  
     N2kMsg.AddByte(0);                    // No rudder order
     N2kMsg.Add2ByteDouble(-1E9, 0.0001); // Rudder Order
-    N2kMsg.Add2ByteDouble(radRudderAngle, 0.0001);
+    N2kMsg.Add2ByteDouble(-radRudderAngle, 0.0001); // Changed direction so direction is ok
     N2kMsg.Add2ByteUInt(0); // Reserved
 
     NMEA2000->SendMsg(N2kMsg);
