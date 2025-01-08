@@ -100,6 +100,7 @@ const unsigned char AutopilotIndustryGroup = 4;    // Marine
 
 bool verbose = false;
 bool analyze = false;
+bool testNav = true;
 
 PyPilot &pypilot = *(new PyPilot());
 
@@ -513,9 +514,21 @@ void handleXTE(const tN2kMsg &N2kMsg)
     if(pypilot.state->mode.value == tPyPilotMode::nav && NavigationTerminated){
       pypilot.setRaymarineMode(tRaymarineMode::Standby, tDataOrigin::kNMEA2000);
       pypilot.sendPilotMode(&NMEA2000);
+      Serial.print("Navbigation terminated by XTE  Packet (129283)");
+      Serial.print(" from: ");
+      Serial.println(N2kMsg.Source);
+      Serial.print("    SID: ");
+      Serial.println(SID);
+      Serial.print("    XTEMode: ");
+      Serial.println(xTEModeValues[XTEMode]);
+      Serial.print("    NavigationTerminated: ");
+      Serial.println(NavigationTerminated);
+      Serial.print("    XTE: ");
+      Serial.println(XTE);
+      Serial.println("------------------------------------------------------------------------------");
     }
 
-    if (!verbose){
+    if (!verbose && !testNav){
       return;
     }
     Serial.print("Received XTE  Packet (129283)");
@@ -908,8 +921,12 @@ void loop()
       ListDevices(true);
       break;
 
-    case 84:
-    case 116:
+    case 't':
+    case 'T':
+      testNav = !testNav;
+
+    case 70:  // f
+    case 102:
 
       NMEA2000.EnableForward(true);
       Serial.println("Tracking");
