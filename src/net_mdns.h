@@ -63,10 +63,10 @@ extern "C" {
 
 
       }else{
-        pypilot->set_host(IPAddress(192, 168, 1, 148), 23322);
+        pypilot->set_host(IPAddress(192, 168, 1, 3), 23322);
         
         Serial.print("No he trobat PyPilot, Default Pyilot at ");
-        Serial.print("192.168.1.148");
+        Serial.print("192.168.1.3");
         Serial.print(" port ");
         Serial.println(23322);
        // writePreferences();

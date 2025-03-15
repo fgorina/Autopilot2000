@@ -166,7 +166,7 @@ void PyPilot::pypilot_send_mode(tPyPilotMode mode)
       } else if (dataFeed.startsWith("ap.heading_command=")) {
         double oldCommand = state->headingCommandMagnetic.value;
         double newCommand = strtof(dataFeed.substring(strlen("ap.heading_command="), dataFeed.length()).c_str(), NULL);
-        if(state->mode.value != tPyPilotMode::nav){
+        if(state->mode.value != tPyPilotMode::nav || true){
             setCommandHeadingMagnetic(newCommand, tDataOrigin::PYPILOT);
         }
 
@@ -294,6 +294,8 @@ boolean PyPilot::startWiFi()
         Serial.print(network);
         Serial.print(" IP ");
         Serial.println(WiFi.localIP());
+
+        // Should enable another LED
 
         //lookupPypilot(this);
 

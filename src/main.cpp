@@ -6,6 +6,8 @@
 
 #define BLE_LED 2
 
+#define SOURCE 15
+
 #include <NMEA2000_esp32.h>
 #include <NMEA2000_CAN.h>
 #include <N2kMessages.h>
@@ -204,7 +206,6 @@ void ListDevices(bool force = false)
   }
 }
 
-
 void toggleLed()
 {
 
@@ -218,7 +219,6 @@ void toggleLed()
   }
 
   digitalWrite(BLE_LED, ledState);
-  
 }
 // Define schedulers for messages. Define schedulers here disabled. Schedulers will be enabled
 // on OnN2kOpen so they will be synchronized with system.
@@ -227,8 +227,8 @@ void toggleLed()
 // IsDefaultFastPacketMessage) and message first start offsets. Use a bit different offset for
 // each message so they will not be sent at same time.
 tN2kSyncScheduler APModeScheduler(false, 500, 1000);
-tN2kSyncScheduler RudderAngleScheduler(false, 100, 100); // Perhaps should be 100?
-tN2kSyncScheduler LockedHeadingDataScheduler(false, 1000, 500);    // Non periodic
+tN2kSyncScheduler RudderAngleScheduler(false, 100, 100);        // Perhaps should be 100?
+tN2kSyncScheduler LockedHeadingDataScheduler(false, 1000, 500); // Non periodic
 
 // *****************************************************************************
 // Call back for NMEA2000 open. This will be called, when library starts bus communication.
@@ -281,7 +281,9 @@ void setup_NMEA2000()
   NMEA2000.SetN2kSource(204);
   NMEA2000.SetOnOpen(OnN2kOpen);
   pN2kDeviceList = new tN2kDeviceList(&NMEA2000);
-  NMEA2000.Open();
+  if(NMEA2000.Open()){
+    Serial.println("NMEA2000 Bus Opened");  // Enable some LED
+  }
 }
 
 void setup()
@@ -446,7 +448,7 @@ void handleNavigationInfo(const tN2kMsg &N2kMsg)
                              OriginWaypointNumber, DestinationWaypointNumber, DestinationLatitude, DestinationLongitude, WaypointClosingVelocity))
   {
 
-    if (!verbose && pypilot.state->mode.value != tPyPilotMode::nav)
+    if ((!verbose && pypilot.state->mode.value != tPyPilotMode::nav) || N2kMsg.Source != SOURCE)
     {
       return;
     }
@@ -511,10 +513,11 @@ void handleXTE(const tN2kMsg &N2kMsg)
   if (ParseN2kXTE(N2kMsg, SID, XTEMode, NavigationTerminated, XTE))
   {
 
-    if(pypilot.state->mode.value == tPyPilotMode::nav && NavigationTerminated){
+    if (pypilot.state->mode.value == tPyPilotMode::nav && NavigationTerminated && false)
+    { // Deshabilitat
       pypilot.setRaymarineMode(tRaymarineMode::Standby, tDataOrigin::kNMEA2000);
       pypilot.sendPilotMode(&NMEA2000);
-      Serial.print("Navbigation terminated by XTE  Packet (129283)");
+      Serial.print("Navigation terminated by XTE  Packet (129283)");
       Serial.print(" from: ");
       Serial.println(N2kMsg.Source);
       Serial.print("    SID: ");
@@ -528,21 +531,26 @@ void handleXTE(const tN2kMsg &N2kMsg)
       Serial.println("------------------------------------------------------------------------------");
     }
 
-    if (!verbose && !testNav){
+    if (!verbose && !testNav)
+    {
       return;
     }
-    Serial.print("Received XTE  Packet (129283)");
-    Serial.print(" from: ");
-    Serial.println(N2kMsg.Source);
-    Serial.print("    SID: ");
-    Serial.println(SID);
-    Serial.print("    XTEMode: ");
-    Serial.println(xTEModeValues[XTEMode]);
-    Serial.print("    NavigationTerminated: ");
-    Serial.println(NavigationTerminated);
-    Serial.print("    XTE: ");
-    Serial.println(XTE);
-    Serial.println("------------------------------------------------------------------------------");
+
+    if (N2kMsg.Source == 15 && verbose)
+    {
+      Serial.print("Received XTE  Packet (129283)");
+      Serial.print(" from: ");
+      Serial.println(N2kMsg.Source);
+      Serial.print("    SID: ");
+      Serial.println(SID);
+      Serial.print("    XTEMode: ");
+      Serial.println(xTEModeValues[XTEMode]);
+      Serial.print("    NavigationTerminated: ");
+      Serial.println(NavigationTerminated);
+      Serial.print("    XTE: ");
+      Serial.println(XTE);
+      Serial.println("------------------------------------------------------------------------------");
+    }
   }
 }
 void handleRouteInfo(const tN2kMsg &N2kMsg)
@@ -597,7 +605,8 @@ void handleRouteInfo(const tN2kMsg &N2kMsg)
   }
 }
 
-void handleWind(const tN2kMsg &N2kMsg){
+void handleWind(const tN2kMsg &N2kMsg)
+{
   double windSpeed;
   double windAngle;
   unsigned char SID;
@@ -605,6 +614,10 @@ void handleWind(const tN2kMsg &N2kMsg){
 
   ParseN2kPGN130306(N2kMsg, SID, windSpeed, windAngle, windReference);
 
+  if (!verbose)
+  {
+    return;
+  }
   Serial.print("Source ");
   Serial.print(N2kMsg.Source);
   Serial.print(" Wind Angle ");
@@ -613,7 +626,7 @@ void handleWind(const tN2kMsg &N2kMsg){
   Serial.print(windSpeed / 1852.0 * 3600.0);
   Serial.print(" reference ");
   Serial.println(windReference);
-  }
+}
 void handleRudderCommand(const tN2kMsg &N2kMsg)
 {
 
@@ -877,7 +890,6 @@ void SendModeData() // It is sent every 100ms
   {
     APModeScheduler.UpdateNextTime();
     pypilot.sendPilotMode(&NMEA2000);
-   
   }
 }
 void SendLockedHeadingData() // It is sent every 100ms
@@ -898,7 +910,7 @@ void loop()
   SendLockedHeadingData();
 
   NMEA2000.ParseMessages();
- // ListDevices();
+  ListDevices();
 
   if (Serial.available() > 0)
   {
@@ -925,7 +937,7 @@ void loop()
     case 'T':
       testNav = !testNav;
 
-    case 70:  // f
+    case 70: // f
     case 102:
 
       NMEA2000.EnableForward(true);

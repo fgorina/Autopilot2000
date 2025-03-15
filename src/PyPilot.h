@@ -23,7 +23,7 @@ protected:
     
     NetClient pypClient = NetClient();
 
-    String network = "elrond";
+    String network = "Yamato";
     String passwd = "ailataN1991";
 
     IPAddress pyp_host = IPAddress(0, 0, 0, 0);
