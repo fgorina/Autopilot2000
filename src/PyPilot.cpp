@@ -44,6 +44,7 @@ void PyPilot::pypilot_send_engage()
     {
         pypClient.c.println(F("ap.enabled=true"));
         pypClient.c.flush();
+        pypilot_send_command(state->heading.heading/PI*180.0);
         pypilot_send_mode(state->mode.value);
     }
     
@@ -596,10 +597,20 @@ void PyPilot::setTackDirection(tTackDirection direction, tDataOrigin from)
 
 void PyPilot::setHeading(double angle, tN2kHeadingReference ref, tDataOrigin from)
 {
-    state->heading.heading = angle;
+    if(from == tDataOrigin::PYPILOT){
+        state->heading.heading = angle / 180. * PI;
+    }else{
+        state->heading.heading = angle;
+    }
+    
     state->heading.reference = ref;
     state->heading.origin = from;
     state->heading.when = millis();
+
+     //Serial.print("Receiving Heading from NMEA : "); Serial.print(state->heading.heading);
+     //Serial.print(" Origin: "); Serial.print(from);Serial.print(" Ref: "); Serial.println(ref);
+
+   
 }
 
 void PyPilot::setVariation(double angle, tDataOrigin from)
