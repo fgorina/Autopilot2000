@@ -598,7 +598,7 @@ void PyPilot::setTackDirection(tTackDirection direction, tDataOrigin from)
 void PyPilot::setHeading(double angle, tN2kHeadingReference ref, tDataOrigin from)
 {
     if(from == tDataOrigin::PYPILOT){
-        state->heading.heading = angle / 180. * PI;
+        state->heading.heading = angle / 180.0 * PI;
     }else{
         state->heading.heading = angle;
     }
@@ -655,16 +655,18 @@ void PyPilot::setServoPosition(double position, tDataOrigin from)
 // Here we set the command to pypilot
 void PyPilot::setCommandHeadingTrue(double heading, tDataOrigin from)
 {
-    state->headingCommandTrue.value = heading;
-    state->headingCommandTrue.origin = from;
-    state->headingCommandTrue.when = millis();
-
-    state->headingCommandMagnetic.value = heading  - state->variation.value;
-    state->headingCommandMagnetic.origin = from;
-    state->headingCommandMagnetic.when = millis();
-   
+  
     if (from != tDataOrigin::PYPILOT)
     {
+
+        state->headingCommandTrue.value = heading / PI * 180.0;
+        state->headingCommandTrue.origin = from;
+        state->headingCommandTrue.when = millis();
+
+        state->headingCommandMagnetic.value =  heading / PI * 180.0  - state->variation.value;
+        state->headingCommandMagnetic.origin = from;
+        state->headingCommandMagnetic.when = millis();
+
         Serial.print("Receiving command heading from NMEA to (true) ");
         Serial.print(heading);
         Serial.print(" Magnetic ");
@@ -674,6 +676,15 @@ void PyPilot::setCommandHeadingTrue(double heading, tDataOrigin from)
     }
     else
     {
+
+        state->headingCommandTrue.value = heading;
+        state->headingCommandTrue.origin = from;
+        state->headingCommandTrue.when = millis();
+
+        state->headingCommandMagnetic.value = heading  - state->variation.value;
+        state->headingCommandMagnetic.origin = from;
+        state->headingCommandMagnetic.when = millis();
+
         Serial.print("Receiving command heading from PyPilot to (true) ");
         Serial.println(heading);
         sendLockedHeading(nmea2000);
@@ -682,22 +693,30 @@ void PyPilot::setCommandHeadingTrue(double heading, tDataOrigin from)
 
 void PyPilot::setCommandHeadingMagnetic(double heading, tDataOrigin from)
 {
-    state->headingCommandMagnetic.value = heading;
-    state->headingCommandMagnetic.origin = from;
-    state->headingCommandMagnetic.when = millis();
-
-    state->headingCommandTrue.value = heading + state->variation.value;
-    state->headingCommandTrue.origin = from;
-    state->headingCommandTrue.when = millis();
+    
     
     if (from != tDataOrigin::PYPILOT)
     {
+        state->headingCommandMagnetic.value = heading / PI * 180.0;
+        state->headingCommandMagnetic.origin = from;
+        state->headingCommandMagnetic.when = millis();
+
+        state->headingCommandTrue.value = heading / PI * 180.0 + state->variation.value;
+        state->headingCommandTrue.origin = from;
+        state->headingCommandTrue.when = millis();
         Serial.print("Receiving command heading from NMEA to (magnetic) ");
         Serial.println(heading);
         pypilot_send_command(heading);
     }
     else
     {
+        state->headingCommandMagnetic.value = heading;
+        state->headingCommandMagnetic.origin = from;
+        state->headingCommandMagnetic.when = millis();
+
+        state->headingCommandTrue.value = heading + state->variation.value;
+        state->headingCommandTrue.origin = from;
+        state->headingCommandTrue.when = millis();
         Serial.print("Receiving command heading from PyPilot to (magnetic) ");
         Serial.println(heading);
         sendLockedHeading(nmea2000);

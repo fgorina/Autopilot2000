@@ -17,16 +17,16 @@ class tState {
 
         // Autopilot Data
         
-        tHeadingData heading {when: 0, origin: tDataOrigin::NO_DATA, reference: tN2kHeadingReference::N2khr_Unavailable, heading: 0.0};   // ap.heading
-        tDoubleData deviation {when: 0, origin: tDataOrigin::NO_DATA, value:0.0};
-        tDoubleData variation {when: 0, origin: tDataOrigin::NO_DATA, value:0.0};
+        tHeadingData heading {when: 0, origin: tDataOrigin::NO_DATA, reference: tN2kHeadingReference::N2khr_Unavailable, heading: 0.0};   // In Radians
+        tDoubleData deviation {when: 0, origin: tDataOrigin::NO_DATA, value:0.0}; // In degrees
+        tDoubleData variation {when: 0, origin: tDataOrigin::NO_DATA, value:0.0};   // In degrees
         tDoubleData rudderAngle {when: 0, origin: tDataOrigin::NO_DATA, value: 0.0}; // rudder.angle
 
         // RW , Commands and data
         tModeData mode {when: 0, origin: tDataOrigin::NO_DATA, value:tPyPilotMode::compass}; // ap.mode
         tBoolData engaged {when: 0, origin: tDataOrigin::NO_DATA, value: false};   // ap.enabled
-        tDoubleData headingCommandTrue {when: 0, origin: tDataOrigin::NO_DATA, value:0.0};
-        tDoubleData headingCommandMagnetic {when: 0, origin: tDataOrigin::NO_DATA, value:0.0};    // ap.heading_command
+        tDoubleData headingCommandTrue {when: 0, origin: tDataOrigin::NO_DATA, value:0.0}; //In degrees
+        tDoubleData headingCommandMagnetic {when: 0, origin: tDataOrigin::NO_DATA, value:0.0};    // ap.heading_command In degrees
         tRudderCommandData rudderCommand {when: 0, origin: tDataOrigin::NO_DATA,  direction: tN2kRudderDirectionOrder::N2kRDO_NoDirectionOrder , command: 0.0};
 
         tTackStateData tackState {when: 0, origin: tDataOrigin::NO_DATA, value: tTackState::TACK_NONE}; //ap.tack.state
