@@ -864,7 +864,7 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
     break;
 
   default:
-    if (analyze)
+    if (analyze && N2kMsg.Source == 15)
     {
       Serial.print("Received PGN ");
       Serial.print(N2kMsg.PGN);
@@ -900,6 +900,7 @@ void SendLockedHeadingData() // It is sent every 100ms
     LockedHeadingDataScheduler.UpdateNextTime();
 
     pypilot.sendLockedHeading(&NMEA2000);
+    pypilot.sendWindDatum(&NMEA2000);
   }
 }
 void loop()
