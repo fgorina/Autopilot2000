@@ -799,8 +799,8 @@ void PyPilot::sendLockedHeading(tNMEA2000 *NMEA2000)
 }
 void PyPilot::sendWindDatum(tNMEA2000 *NMEA2000){
 
-    Serial.print("Sending datum  heading of ");
-    Serial.println(state->headingCommandMagnetic.value);
+   // Serial.print("Sending datum  heading of ");
+   // Serial.println(state->headingCommandMagnetic.value);
     tN2kMsg N2kMsg;
     N2kMsg.SetPGN(65345);
     double radLockedHeadingTrue = state->headingCommandMagnetic.value / 180.0 * 3.141592;

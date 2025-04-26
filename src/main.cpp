@@ -281,8 +281,9 @@ void setup_NMEA2000()
   NMEA2000.SetN2kSource(204);
   NMEA2000.SetOnOpen(OnN2kOpen);
   pN2kDeviceList = new tN2kDeviceList(&NMEA2000);
-  if(NMEA2000.Open()){
-    Serial.println("NMEA2000 Bus Opened");  // Enable some LED
+  if (NMEA2000.Open())
+  {
+    Serial.println("NMEA2000 Bus Opened"); // Enable some LED
   }
 }
 
@@ -614,7 +615,7 @@ void handleWind(const tN2kMsg &N2kMsg)
 
   ParseN2kPGN130306(N2kMsg, SID, windSpeed, windAngle, windReference);
 
-  if (!verbose)
+  if (!verbose || true)
   {
     return;
   }
@@ -692,6 +693,8 @@ void processKey(unsigned char key)
   case key_codes::KEY_WIND:
   {
     pypilot.pypilot_send_mode(tPyPilotMode::wind);
+    vTaskDelay(10);
+    pypilot.pypilot_send_command(pypilot.state->heading.heading);
     pypilot.pypilot_send_engage();
     break;
   }
@@ -732,19 +735,19 @@ void processKey(unsigned char key)
   }
 
   case key_codes::KEY_TACK_PORTSIDE:
-
   {
     pypilot.setTackDirection(tTackDirection::TACKING_TO_PORT, tDataOrigin::kNMEA2000);
-    break;
     pypilot.pypilot_send_tack();
+    break;
   }
 
   case key_codes::KEY_TACK_STARBORD:
   {
-  }
+
     pypilot.setTackDirection(tTackDirection::TACKING_TO_STARBOARD, tDataOrigin::kNMEA2000);
     pypilot.pypilot_send_tack();
     break;
+  }
   }
 }
 void handleKey(const tN2kMsg &N2kMsg)
