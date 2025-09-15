@@ -38,9 +38,13 @@ protected:
     tRaymarineMode pyPilot2RaymarineMode(tPyPilotMode mode);
     tPyPilotMode raymarine2PyPilotMode(tRaymarineMode mode);
 
+    bool test = false;
+
 
 public:
     tState *state {new tState()};
+
+    bool isConnected();
 
  void set_host(IPAddress adr, int port);
  void set_nmea(tNMEA2000* pNemea);

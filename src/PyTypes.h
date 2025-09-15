@@ -81,5 +81,24 @@ typedef struct {
     tTackDirection value;
   } tTackDirectionData;
 
+  typedef struct {
+    unsigned long when;
+    tDataOrigin origin;
+    double latitude;
+    double longitude;
+  } tCoordinateData;
+
+  typedef struct {
+    unsigned long when;
+    tDataOrigin origin;
+
+    tN2kHeadingReference bearingReference;
+
+    double bearingOriginToDestination;
+    double bearingPositionToDestination;
+    double destinationLatitude;
+    double destinationLongitude;
+  } tNavigationData;
+
 
 #endif

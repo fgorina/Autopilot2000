@@ -17,33 +17,36 @@ void PyPilot::set_nmea(tNMEA2000* pNemea){
     nmea2000 = pNemea;
    }
 
+   bool PyPilot::isConnected(){
+    return pypClient.c.connected() && !test;
+   }
 // Sending to PyPilot
 
 void PyPilot::pypilot_greet()
 {
-    if (pypClient.c.connected())
+    if (isConnected())
     {
-        pypClient.c.println(F("watch={\"ap.heading\":0.5}"));
-        pypClient.c.println(F("watch={\"ap.heading_command\":true}"));
-        pypClient.c.println(F("watch={\"ap.enabled\":true}"));
-        pypClient.c.println(F("watch={\"ap.mode\":true}"));
-        pypClient.c.println(F("watch={\"servo.amp_hours\":1}"));
-        pypClient.c.println(F("watch={\"servo.position\":0.0}"));
-        pypClient.c.println(F("watch={\"servo.controller_temp\":1}"));
-        pypClient.c.println(F("watch={\"servo.voltage\":1}"));
-        pypClient.c.println(F("watch={\"ap.tack.state\":0.5}"));
-        pypClient.c.println(F("watch={\"ap.tack.direction\":1}"));
-        pypClient.c.println(F("watch={\"rudder.angle\":0}"));
-        pypClient.c.flush();
+        pypClient.c.println("watch={\"ap.heading\":0.5}");
+        pypClient.c.println("watch={\"ap.heading_command\":true}");
+        pypClient.c.println("watch={\"ap.enabled\":true}");
+        pypClient.c.println("watch={\"ap.mode\":true}");
+        pypClient.c.println("watch={\"servo.amp_hours\":1}");
+        pypClient.c.println("watch={\"servo.position\":0.0}");
+        pypClient.c.println("watch={\"servo.controller_temp\":1}");
+        pypClient.c.println("watch={\"servo.voltage\":1}");
+        pypClient.c.println("watch={\"ap.tack.state\":0.5}");
+        pypClient.c.println("watch={\"ap.tack.direction\":1}");
+        pypClient.c.println("watch={\"rudder.angle\":0}");
+        //PACO pypClient.c.flush();
     }
 }
 
 void PyPilot::pypilot_send_engage()
 {
-    if (pypClient.c.connected())
+    if (isConnected())
     {
-        pypClient.c.println(F("ap.enabled=true"));
-        pypClient.c.flush();
+        pypClient.c.println("ap.enabled=true");
+        //PACO pypClient.c.flush();
         pypilot_send_command(state->heading.heading/PI*180.0);
         pypilot_send_mode(state->mode.value);
     }
@@ -52,42 +55,42 @@ void PyPilot::pypilot_send_engage()
 
 void PyPilot::pypilot_send_disengage()
 {
-    if (pypClient.c.connected())
+    if (isConnected())
     {
-        pypClient.c.println(F("ap.enabled=false"));
-        pypClient.c.flush();
+        pypClient.c.println("ap.enabled=false");
+        //PACO pypClient.c.flush();
     }
 }
 
 void PyPilot::pypilot_send_command(double heading)
 {
-    if (pypClient.c.connected())
+    if (isConnected())
     {
-        pypClient.c.print(F("ap.heading_command="));
-        pypClient.c.println(String(heading, 1));
-        pypClient.c.flush();
+        pypClient.c.print("ap.heading_command=");
+        pypClient.c.println(heading, 1);
+        //PACO pypClient.c.flush();
     }
 }
 
 void PyPilot::pypilot_send_rudder_command(double command)
 {
 
-    if (pypClient.c.connected())
+    if (isConnected())
     {
         // Serial.print("Sending rudderCommand "); USBSerial.println(String(command, 2));
-        pypClient.c.print(F("servo.command="));
-        pypClient.c.println(String(command, 2));
-        pypClient.c.flush();
+        pypClient.c.print("servo.command=");
+        pypClient.c.println(command, 2);
+        //PACO pypClient.c.flush();
     }
 }
 
 void PyPilot::pypilot_send_rudder_position(double pos)
 {
-    if (pypClient.c.connected())
+    if (isConnected())
     {
-        pypClient.c.print(F("servo.position_command="));
-        pypClient.c.println(String(pos, 2));
-        pypClient.c.flush();
+        pypClient.c.print("servo.position_command=");
+        pypClient.c.println(pos, 2);
+        //PACO pypClient.c.flush();
     }
 }
 
@@ -96,23 +99,23 @@ void PyPilot::pypilot_send_tack()
     Serial.print("Tacking to ");
     tTackDirection direction = state->tackDirection.value;
     Serial.println(direction);
-    if (pypClient.c.connected() && direction != tTackDirection::TACKING_NONE)
+    if (isConnected() && direction != tTackDirection::TACKING_NONE)
     {
         
-        pypClient.c.print(F("ap.tack.direction=\""));
-        pypClient.c.print(String(direction == tTackDirection::TACKING_TO_STARBOARD ? "starboard" : "port"));
+        pypClient.c.print("ap.tack.direction=\"");
+        pypClient.c.print(direction == tTackDirection::TACKING_TO_STARBOARD ? "starboard" : "port");
         pypClient.c.println("\"");
-        pypClient.c.println(F("ap.tack.state=\"begin\""));
-        pypClient.c.flush();
+        pypClient.c.println("ap.tack.state=\"begin\"");
+        //PACO pypClient.c.flush();
     }
 }
 
 void PyPilot::pypilot_send_cancel_tack()
 {
-    if (pypClient.c.connected())
+    if (isConnected())
     {
-        pypClient.c.println(F("ap.tack.state=\"none\""));
-        pypClient.c.flush();
+        pypClient.c.println("ap.tack.state=\"none\"");
+        //PACO pypClient.c.flush();
     }
 }
 
@@ -121,31 +124,31 @@ void PyPilot::pypilot_send_mode(tPyPilotMode mode)
 
     Serial.print("Sending mode ");
     Serial.println(mode);
-    if (pypClient.c.connected())
+    if (isConnected())
     {
         switch(mode){
             case tPyPilotMode::compass: 
-                 pypClient.c.println(F("ap.mode=\"compass\""));
+                 pypClient.c.println("ap.mode=\"compass\"");
                  break;
            case tPyPilotMode::gps: 
-                 pypClient.c.println(F("ap.mode=\"gps\""));
+                 pypClient.c.println("ap.mode=\"gps\"");
                  break;
           case tPyPilotMode::wind: 
-                 pypClient.c.println(F("ap.mode=\"wind\""));
+                 pypClient.c.println("ap.mode=\"wind\"");
                  break;
           case tPyPilotMode::trueWind: 
-                 pypClient.c.println(F("ap.mode=\"true wind\""));
+                 pypClient.c.println("ap.mode=\"true wind\"");
                  break;
            
            case tPyPilotMode::nav:
                 // Send compass. Orca or Nav Computer sends headings that are converted
                 // to magnetic headings. Seems to work best
 
-                 pypClient.c.println(F("ap.mode=\"compass\""));
+                 pypClient.c.println("ap.mode=\"gps\"");
                  break;
 
         }
-        pypClient.c.flush();
+        //PACO pypClient.c.flush();
     }
 }
 
@@ -167,8 +170,10 @@ void PyPilot::pypilot_send_mode(tPyPilotMode mode)
       } else if (dataFeed.startsWith("ap.heading_command=")) {
         double oldCommand = state->headingCommandMagnetic.value;
         double newCommand = strtof(dataFeed.substring(strlen("ap.heading_command="), dataFeed.length()).c_str(), NULL);
-        if(state->mode.value != tPyPilotMode::nav || true){
+        if(state->mode.value != tPyPilotMode::nav){
             setCommandHeadingMagnetic(newCommand, tDataOrigin::PYPILOT);
+        }else{
+            setCommandHeadingTrue(newCommand, tDataOrigin::PYPILOT);
         }
 
       } else if (dataFeed.startsWith("ap.enabled=true")) {
@@ -348,7 +353,7 @@ void PyPilot::setKeepAlive()
 
 void PyPilot::disconnect_clients()
 {
-    if (pypClient.c.connected())
+    if (isConnected())
     {
         pypClient.c.stop();
     }
@@ -410,7 +415,7 @@ tRaymarineMode PyPilot::pyPilot2RaymarineMode(tPyPilotMode rmode)
         return tRaymarineMode::Compass;         
         break;
     case tPyPilotMode::gps:
-        return tRaymarineMode::Track; // ???
+        return tRaymarineMode::NoDrift; // ???
         break;
    case tPyPilotMode::wind:
         return tRaymarineMode::Wind;         
@@ -511,7 +516,7 @@ void PyPilot::setRaymarineMode(tRaymarineMode rmode, tDataOrigin from)
     {
        
         if (state->mode.value == tPyPilotMode::nav){  // nav mode does not really exist
-            state->mode.value = tPyPilotMode::compass;
+            state->mode.value = tPyPilotMode::gps;
             state->mode.origin = tDataOrigin::kNMEA2000;
             state->mode.when = millis();
         }
@@ -597,8 +602,8 @@ void PyPilot::setTackDirection(tTackDirection direction, tDataOrigin from)
 
 void PyPilot::setHeading(double angle, tN2kHeadingReference ref, tDataOrigin from)
 {
-    if(from == tDataOrigin::PYPILOT){
-        state->heading.heading = angle / 180.0 * PI;
+    if(from != tDataOrigin::PYPILOT){
+        state->heading.heading = angle * 180.0 / PI;
     }else{
         state->heading.heading = angle;
     }
@@ -667,11 +672,19 @@ void PyPilot::setCommandHeadingTrue(double heading, tDataOrigin from)
         state->headingCommandMagnetic.origin = from;
         state->headingCommandMagnetic.when = millis();
 
+        /*
         Serial.print("Receiving command heading from NMEA to (true) ");
-        Serial.print(heading);
+        Serial.print(state->headingCommandTrue.value);
         Serial.print(" Magnetic ");
         Serial.println(state->headingCommandMagnetic.value);  // We translate according variation. 
-        pypilot_send_command(state->headingCommandMagnetic.value);
+        */
+
+        if (state->mode.value == tPyPilotMode::nav){
+            pypilot_send_command(state->headingCommandTrue.value);
+        }else{
+            pypilot_send_command(state->headingCommandMagnetic.value);
+        }
+        
         // Send to PyPilot
     }
     else
@@ -685,8 +698,10 @@ void PyPilot::setCommandHeadingTrue(double heading, tDataOrigin from)
         state->headingCommandMagnetic.origin = from;
         state->headingCommandMagnetic.when = millis();
 
+        /*
         Serial.print("Receiving command heading from PyPilot to (true) ");
         Serial.println(heading);
+        */
         sendLockedHeading(nmea2000);
     }
 }
@@ -704,9 +719,10 @@ void PyPilot::setCommandHeadingMagnetic(double heading, tDataOrigin from)
         state->headingCommandTrue.value = heading / PI * 180.0 + state->variation.value;
         state->headingCommandTrue.origin = from;
         state->headingCommandTrue.when = millis();
+
         Serial.print("Receiving command heading from NMEA to (magnetic) ");
-        Serial.println(heading);
-        pypilot_send_command(heading);
+        Serial.println(state->headingCommandMagnetic.value);
+        pypilot_send_command(state->headingCommandMagnetic.value);
     }
     else
     {
@@ -717,6 +733,7 @@ void PyPilot::setCommandHeadingMagnetic(double heading, tDataOrigin from)
         state->headingCommandTrue.value = heading + state->variation.value;
         state->headingCommandTrue.origin = from;
         state->headingCommandTrue.when = millis();
+
         Serial.print("Receiving command heading from PyPilot to (magnetic) ");
         Serial.println(heading);
         sendLockedHeading(nmea2000);

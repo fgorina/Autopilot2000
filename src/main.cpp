@@ -102,7 +102,7 @@ const unsigned char AutopilotIndustryGroup = 4;    // Marine
 
 bool verbose = false;
 bool analyze = false;
-bool testNav = true;
+bool testNav = false;
 
 PyPilot &pypilot = *(new PyPilot());
 
@@ -228,7 +228,7 @@ void toggleLed()
 // each message so they will not be sent at same time.
 tN2kSyncScheduler APModeScheduler(false, 500, 1000);
 tN2kSyncScheduler RudderAngleScheduler(false, 100, 100);        // Perhaps should be 100?
-tN2kSyncScheduler LockedHeadingDataScheduler(false, 1000, 500); // Non periodic
+tN2kSyncScheduler LockedHeadingDataScheduler(false, 500, 200); // Non periodic
 
 // *****************************************************************************
 // Call back for NMEA2000 open. This will be called, when library starts bus communication.
@@ -372,7 +372,7 @@ void handleHeadingTrackControl(const tN2kMsg &N2kMsg)
 
   {
 
-    if (!verbose)
+    if (!verbose && !testNav)
     {
       return;
     }
@@ -449,10 +449,13 @@ void handleNavigationInfo(const tN2kMsg &N2kMsg)
                              OriginWaypointNumber, DestinationWaypointNumber, DestinationLatitude, DestinationLongitude, WaypointClosingVelocity))
   {
 
-    if ((!verbose && pypilot.state->mode.value != tPyPilotMode::nav) || N2kMsg.Source != SOURCE)
+    if ( N2kMsg.Source != SOURCE || (pypilot.state->mode.value != tPyPilotMode::nav && pypilot.state->mode.value != tPyPilotMode::gps))
     {
       return;
     }
+    
+    
+if (testNav ){
     Serial.print("Received Navigation Data Packet (129284)");
     Serial.print(" from: ");
     Serial.println(N2kMsg.Source);
@@ -487,18 +490,24 @@ void handleNavigationInfo(const tN2kMsg &N2kMsg)
     Serial.print("WaypointClosingVelocity: ");
     Serial.println(WaypointClosingVelocity);
     Serial.println("------------------------------------------------------------------------------");
+}
+ if (pypilot.state->mode.value == tPyPilotMode::gps && DestinationLatitude != -1000000000.0)
+ {
+    pypilot.setPypilotMode(tPyPilotMode::nav, tDataOrigin::PYPILOT);
 
-    if (pypilot.state->mode.value == tPyPilotMode::nav)
+ }
+
+    if (pypilot.state->mode.value == tPyPilotMode::nav &&  DestinationLatitude != -1000000000.0)
     {
       if (BearingReference == tN2kHeadingReference::N2khr_magnetic)
       {
-        pypilot.setCommandHeadingMagnetic(BearingPositionToDestinationWaypoint / 3.141592 * 180.0, tDataOrigin::kNMEA2000);
-        pypilot.sendLockedHeading(&NMEA2000);
+        pypilot.setCommandHeadingMagnetic(BearingPositionToDestinationWaypoint, tDataOrigin::kNMEA2000);
+        //pypilot.sendLockedHeading(&NMEA2000);
       }
       else
       { // True
-        pypilot.setCommandHeadingTrue(BearingPositionToDestinationWaypoint / 3.141592 * 180.0, tDataOrigin::kNMEA2000);
-        pypilot.sendLockedHeading(&NMEA2000);
+        pypilot.setCommandHeadingTrue(BearingPositionToDestinationWaypoint, tDataOrigin::kNMEA2000);
+        //pypilot.sendLockedHeading(&NMEA2000);PACO TEST
       }
     }
   }
@@ -514,30 +523,7 @@ void handleXTE(const tN2kMsg &N2kMsg)
   if (ParseN2kXTE(N2kMsg, SID, XTEMode, NavigationTerminated, XTE))
   {
 
-    if (pypilot.state->mode.value == tPyPilotMode::nav && NavigationTerminated && false)
-    { // Deshabilitat
-      pypilot.setRaymarineMode(tRaymarineMode::Standby, tDataOrigin::kNMEA2000);
-      pypilot.sendPilotMode(&NMEA2000);
-      Serial.print("Navigation terminated by XTE  Packet (129283)");
-      Serial.print(" from: ");
-      Serial.println(N2kMsg.Source);
-      Serial.print("    SID: ");
-      Serial.println(SID);
-      Serial.print("    XTEMode: ");
-      Serial.println(xTEModeValues[XTEMode]);
-      Serial.print("    NavigationTerminated: ");
-      Serial.println(NavigationTerminated);
-      Serial.print("    XTE: ");
-      Serial.println(XTE);
-      Serial.println("------------------------------------------------------------------------------");
-    }
-
-    if (!verbose && !testNav)
-    {
-      return;
-    }
-
-    if (N2kMsg.Source == 15 && verbose)
+    if (testNav && N2kMsg.Source ==  SOURCE && false)
     {
       Serial.print("Received XTE  Packet (129283)");
       Serial.print(" from: ");
@@ -570,7 +556,7 @@ void handleRouteInfo(const tN2kMsg &N2kMsg)
   if (ParseN2kPGN129285(N2kMsg, Start, nItems, Database, Route, NavDirection, RouteName, 20, SupplementaryData, 10, waypoints))
   {
 
-    if (!verbose && pypilot.state->mode.value != tPyPilotMode::nav)
+    if (!testNav || N2kMsg.Source != SOURCE)
     {
       return;
     }
@@ -903,7 +889,7 @@ void SendLockedHeadingData() // It is sent every 100ms
     LockedHeadingDataScheduler.UpdateNextTime();
 
     pypilot.sendLockedHeading(&NMEA2000);
-    pypilot.sendWindDatum(&NMEA2000);
+    //pypilot.sendWindDatum(&NMEA2000);
   }
 }
 void loop()
@@ -940,6 +926,7 @@ void loop()
     case 't':
     case 'T':
       testNav = !testNav;
+      break;
 
     case 70: // f
     case 102:

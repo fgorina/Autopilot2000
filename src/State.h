@@ -39,6 +39,11 @@ class tState {
         tDoubleData servoControllerTemp {when: 0, origin: tDataOrigin::NO_DATA, value:0.0}; // servo.controller_temp      
         tDoubleData servoPosition {when: 0, origin: tDataOrigin::NO_DATA, value:0.0}; // servo.position
 
+        // Route
+
+        tNavigationData navigationData{when: 0, origin: tDataOrigin::NO_DATA, bearingReference: tN2kHeadingReference::N2khr_Unavailable, 
+            bearingOriginToDestination: 0.0, bearingPositionToDestination: 0.0, destinationLatitude: 0.0, destinationLongitude: 0.0};
+
 
         
 

@@ -17,7 +17,7 @@
 #if !defined(N2K_NO_GROUP_FUNCTION_SUPPORT)
 
 //*****************************************************************************
-// PGN65379 - Request Mode
+// PGN65379 - Seatalk Pilot Mode - Request Mode -
 bool tN2kGroupFunctionHandlerForPGN65379::HandleRequest(const tN2kMsg &N2kMsg,
                                                         uint32_t TransmissionInterval,
                                                         uint16_t TransmissionIntervalOffset,
@@ -138,7 +138,7 @@ bool tN2kGroupFunctionHandlerForPGN65379::HandleRequest(const tN2kMsg &N2kMsg,
 }
 
 /*****************************************************************************/
-// PGN65379 - Set Mode
+// PGN65379 - Set Pilot Mode
 bool tN2kGroupFunctionHandlerForPGN65379::HandleCommand(const tN2kMsg &N2kMsg, uint8_t PrioritySetting, uint8_t NumberOfParameterPairs, int iDev)
 {
   int i;
@@ -469,14 +469,14 @@ bool tN2kGroupFunctionHandlerForPGN65360::HandleCommand(const tN2kMsg &N2kMsg, u
 
     case N2kPGN65360_TargetHeadingTrue_field:
     {
-      trueHeading = N2kMsg.Get2ByteDouble(0.0001, Index) / 3.141592 * 180.0;
+      trueHeading = N2kMsg.Get2ByteDouble(0.0001, Index);
      
       break;
     }
 
     case N2kPGN65360_TargetHeadingMagnetic_field:
     {
-      magneticHeading = N2kMsg.Get2ByteDouble(0.0001, Index) / 3.141592 * 180.0;
+      magneticHeading = N2kMsg.Get2ByteDouble(0.0001, Index);
       break;
     }
 
