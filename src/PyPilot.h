@@ -50,6 +50,8 @@ public:
  void set_nmea(tNMEA2000* pNemea);
 
     // Setting State
+
+        void setWind(double angle, double speed, tDataOrigin from);
         void setRudderAngle(double angle, tDataOrigin from);
         void setHeading(double angle, tN2kHeadingReference reference, tDataOrigin from);
         void setVariation(double angle, tDataOrigin from);
@@ -88,10 +90,10 @@ public:
 
    
       // Sending Information to NMEA2000
-
+        void sendHeadingTrackControl(tNMEA2000 *NMEA2000);
         void sendPilotMode(tNMEA2000 *NMEA2000);
         void sendVesselHeading(tNMEA2000 *NMEA2000);
-        void sendHeadingTrackControl(tNMEA2000 *NMEA2000);
+        void sendHeadinTrackControl(tNMEA2000 *NMEA2000);
         void sendRudder(tNMEA2000 *NMEA2000);
         void sendLockedHeading(tNMEA2000 *NMEA2000);
         void sendWindDatum(tNMEA2000 *NMEA2000);

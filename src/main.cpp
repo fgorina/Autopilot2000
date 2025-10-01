@@ -603,7 +603,12 @@ void handleWind(const tN2kMsg &N2kMsg)
   tN2kWindReference windReference;
 
   ParseN2kPGN130306(N2kMsg, SID, windSpeed, windAngle, windReference);
-
+ 
+  if (windReference == tN2kWindReference::N2kWind_Apparent){
+    
+   pypilot.setWind(windAngle, windSpeed, tDataOrigin::kNMEA2000);
+  }
+ 
   if (!verbose || true)
   {
     return;
@@ -891,10 +896,12 @@ void SendLockedHeadingData() // It is sent every 100ms
   {
     LockedHeadingDataScheduler.UpdateNextTime();
     if (pypilot.state->engaged.value){
-      pypilot.sendLockedHeading(&NMEA2000);
+      if(pypilot.state->mode.value == tPyPilotMode::wind){
+        pypilot.sendWindDatum(&NMEA2000);
+      }else{
+        pypilot.sendLockedHeading(&NMEA2000);
+      }
     }
-    
-    //pypilot.sendWindDatum(&NMEA2000);
   }
 }
 void SendHeadingTrack() // It is sent every 100ms

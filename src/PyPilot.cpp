@@ -461,6 +461,18 @@ tPyPilotMode PyPilot::raymarine2PyPilotMode(tRaymarineMode rmode)
     }
 }
 
+void PyPilot::setWind(double angle, double speed, tDataOrigin from)
+{
+    state->apparentWindSpeed.value = speed;
+    state->apparentWindSpeed.origin = from;
+    state->apparentWindSpeed.when = millis();
+
+    state->apparentWindAngle.value = angle / PI * 180.0;
+    state->apparentWindAngle.origin = from;
+    state->apparentWindAngle.when = millis();
+ 
+}
+
 void PyPilot::setRudderAngle(double angle, tDataOrigin from)
 {
     state->rudderAngle.value = angle;
@@ -853,14 +865,14 @@ void PyPilot::sendWindDatum(tNMEA2000 *NMEA2000){
    // Serial.println(state->headingCommandMagnetic.value);
     tN2kMsg N2kMsg;
     N2kMsg.SetPGN(65345);
-    double radLockedHeadingTrue = state->headingCommandMagnetic.value / 180.0 * 3.141592;
+    double radLockedHeadingTrue = state->apparentWindAngle.value / 180.0 * 3.141592;
     double radLockedHeadingMagnetic = state->heading.heading / 180.0 * 3.141592;
 
     N2kMsg.AddByte(0x3B); // Raymarine, Marine
     N2kMsg.AddByte(0x47);
 
     N2kMsg.Add2ByteDouble(radLockedHeadingTrue, 0.0001);        // Wind Datum
-    N2kMsg.Add2ByteDouble(radLockedHeadingMagnetic, 0.0001);    // Rolling Average Wind Angle
+    N2kMsg.Add2ByteDouble(radLockedHeadingTrue, 0.0001);    // Rolling Average Wind Angle
 
     N2kMsg.AddByte(0); // Reserved
 

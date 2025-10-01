@@ -15,6 +15,11 @@ class tState {
     
     public:
 
+        // Wind Data -- For the moment only use the apparent. I don't understant very well the truee of Pypilot
+
+        tDoubleData apparentWindSpeed {when: 0, origin: tDataOrigin::NO_DATA, value:0.0}; // In m/s
+        tDoubleData apparentWindAngle {when: 0, origin: tDataOrigin::NO_DATA, value:0.0}; // In degrees (+/- 180)
+   
         // Autopilot Data
         
         tHeadingData heading {when: 0, origin: tDataOrigin::NO_DATA, reference: tN2kHeadingReference::N2khr_Unavailable, heading: 0.0};   // In Radians
