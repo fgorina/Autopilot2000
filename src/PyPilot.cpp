@@ -48,7 +48,7 @@ void PyPilot::pypilot_send_engage()
     {
         pypClient.c.println("ap.enabled=true");
         //PACO pypClient.c.flush();
-        pypilot_send_command(state->heading.heading/PI*180.0);
+        pypilot_send_command(state->heading.heading);
         pypilot_send_mode(state->mode.value);
     }
     
@@ -621,14 +621,14 @@ void PyPilot::setHeading(double angle, tN2kHeadingReference ref, tDataOrigin fro
 
 void PyPilot::setVariation(double angle, tDataOrigin from)
 {
-    state->variation.value = angle / 3.141592 * 180.0;
+    state->variation.value = angle / PI * 180.0;
     state->variation.origin = from;
     state->variation.when = millis();
 }
 
 void PyPilot::setDeviation(double angle, tDataOrigin from)
 {
-    state->deviation.value = angle / 3.141592 * 180.0;
+    state->deviation.value = angle / PI * 180.0;
     state->deviation.origin = from;
     state->deviation.when = millis();
 }
