@@ -3,6 +3,7 @@
 #include "N2kTypes.h"
 #include <lwip/sockets.h>
 #include "net_mdns.h"
+#include <N2kMessages.h>
 
 void pypilot_loop(void *p);
 
@@ -703,6 +704,7 @@ void PyPilot::setCommandHeadingTrue(double heading, tDataOrigin from)
         Serial.println(heading);
         */
         sendLockedHeading(nmea2000);
+        sendHeadingTrackControl(nmea2000);
     }
 }
 
@@ -737,6 +739,7 @@ void PyPilot::setCommandHeadingMagnetic(double heading, tDataOrigin from)
         Serial.print("Receiving command heading from PyPilot to (magnetic) ");
         Serial.println(heading);
         sendLockedHeading(nmea2000);
+        sendHeadingTrackControl(nmea2000);
     }
 }
 
@@ -776,7 +779,37 @@ void PyPilot::sendVesselHeading(tNMEA2000 *NMEA2000)
 
     NMEA2000->SendMsg(N2kMsg);
 }
+void PyPilot::sendHeadingTrackControl(tNMEA2000 *NMEA2000)
+{
+   
+    tN2kMsg N2kMsg;
+    double radVesselHeading = state->heading.heading / 180.0 * 3.141592;
+    double radHeadingToSteer = state->headingCommandMagnetic.value / 180.0 * 3.141592;
 
+
+    SetN2kPGN127237(
+        N2kMsg,
+        N2kOnOff_Unavailable,     // RudderLimitExceeded
+        N2kOnOff_Unavailable,     // OffHeadingLimitExceeded
+        N2kOnOff_Unavailable,     // OffTrackLimitExceeded
+        N2kOnOff_Unavailable,     // Override
+        N2kSM_Unavailable,            // SteeringMode
+        N2kTM_Unavailable,            // TurnMode
+        N2khr_magnetic,                      // HeadingReference (True/Magnetic)
+        N2kRDO_Unavailable,           // CommandedRudderDirection
+        N2kDoubleNA,              // CommandedRudderAngle
+        radHeadingToSteer,           // HeadingToSteerCourse (radians)
+        N2kDoubleNA,              // Track
+        N2kDoubleNA,              // RudderLimit
+        N2kDoubleNA,              // OffHeadingLimit
+        N2kDoubleNA,              // RadiusOfTurnOrder
+        N2kDoubleNA,              // RateOfTurnOrder
+        N2kDoubleNA,              // OffTrackLimit
+        radVesselHeading             // VesselHeading (radians)
+    );
+
+    NMEA2000->SendMsg(N2kMsg);
+}
 void PyPilot::sendRudder(tNMEA2000 *NMEA2000)
 {
     tN2kMsg N2kMsg;

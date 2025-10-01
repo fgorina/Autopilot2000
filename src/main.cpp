@@ -48,6 +48,7 @@ const char *xTEModeValues[] PROGMEM = {"Autonomous", "Differential", "Estimated"
 const unsigned long TransmitMessages[] PROGMEM = {126208L, // Request, command and "Reconocer?"
                                                   127245L, // Rudder Angle every 40ms
                                                   127250L, // Rhumb 100 ms
+                                                  127237L, // Heading Track Control 250 ms
                                                   65288L,  // Read Seatalk Alarm State
                                                   65379L,  // Read Pilot Mode
                                                   65360L,  // Read Pilot locked heading
@@ -228,7 +229,8 @@ void toggleLed()
 // each message so they will not be sent at same time.
 tN2kSyncScheduler APModeScheduler(false, 500, 1000);
 tN2kSyncScheduler RudderAngleScheduler(false, 100, 100);        // Perhaps should be 100?
-tN2kSyncScheduler LockedHeadingDataScheduler(false, 500, 200); // Non periodic
+tN2kSyncScheduler LockedHeadingDataScheduler(false, 500, 400); // Non periodic
+tN2kSyncScheduler HeadingTrackScheduler(false, 250, 200); // Heading track control
 
 // *****************************************************************************
 // Call back for NMEA2000 open. This will be called, when library starts bus communication.
@@ -239,6 +241,7 @@ void OnN2kOpen()
   APModeScheduler.UpdateNextTime();
   RudderAngleScheduler.UpdateNextTime();
   LockedHeadingDataScheduler.UpdateNextTime();
+  HeadingTrackScheduler.UpdateNextTime();
 }
 
 void setup_NMEA2000()
@@ -887,9 +890,21 @@ void SendLockedHeadingData() // It is sent every 100ms
   if (LockedHeadingDataScheduler.IsTime())
   {
     LockedHeadingDataScheduler.UpdateNextTime();
-
-    pypilot.sendLockedHeading(&NMEA2000);
+    if (pypilot.state->engaged.value){
+      pypilot.sendLockedHeading(&NMEA2000);
+    }
+    
     //pypilot.sendWindDatum(&NMEA2000);
+  }
+}
+void SendHeadingTrack() // It is sent every 100ms
+{
+  tN2kMsg N2kMsg;
+  if (HeadingTrackScheduler.IsTime())
+  {
+    HeadingTrackScheduler.UpdateNextTime();
+    pypilot.sendHeadingTrackControl(&NMEA2000);
+
   }
 }
 void loop()
@@ -897,6 +912,7 @@ void loop()
 
   SendN2kRudder();
   SendModeData();
+  SendHeadingTrack();
   SendLockedHeadingData();
 
   NMEA2000.ParseMessages();
