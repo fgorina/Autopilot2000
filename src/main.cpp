@@ -375,6 +375,7 @@ void handleHeadingTrackControl(const tN2kMsg &N2kMsg)
 
   {
 
+    
     if (!verbose && !testNav)
     {
       return;
@@ -403,7 +404,7 @@ void handleHeadingTrackControl(const tN2kMsg &N2kMsg)
     Serial.print("Command Rudder Angle: ");
     Serial.println(CommandedRudderAngle);
     Serial.print("Heading to steer course: (");
-    Serial.print(HeadingToSteerCourse / 3.141592 * 180);
+    Serial.print(HeadingToSteerCourse / PI * 180);
     Serial.print(") ");
     Serial.println(HeadingToSteerCourse);
     Serial.print("Track: ");
