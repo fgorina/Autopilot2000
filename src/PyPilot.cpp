@@ -48,7 +48,10 @@ void PyPilot::pypilot_send_engage()
     {
         pypClient.c.println("ap.enabled=true");
         //PACO pypClient.c.flush();
-        pypilot_send_command(state->heading.heading);
+        
+        if (state->mode.value != tPyPilotMode::nav && state->mode.value != tPyPilotMode::wind){
+            pypilot_send_command(state->heading.heading);
+        }
         pypilot_send_mode(state->mode.value);
     }
     
