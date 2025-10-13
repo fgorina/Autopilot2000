@@ -813,7 +813,7 @@ void PyPilot::sendHeadingTrackControl(tNMEA2000 *NMEA2000)
         N2khr_magnetic,                      // HeadingReference (True/Magnetic)
         N2kRDO_Unavailable,           // CommandedRudderDirection
         N2kDoubleNA,              // CommandedRudderAngle
-        radHeadingToSteer,           // HeadingToSteerCourse (radians)
+        state->mode.value ==  tPyPilotMode::wind ? N2kDoubleNA : radHeadingToSteer,           // HeadingToSteerCourse (radians)
         N2kDoubleNA,              // Track
         N2kDoubleNA,              // RudderLimit
         N2kDoubleNA,              // OffHeadingLimit
