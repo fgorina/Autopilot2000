@@ -37,6 +37,12 @@ typedef enum  {
     PYPILOT = 2
   } tDataOrigin;
 
+  typedef enum {
+    MOB_INACTIVE = 0,
+    MOB_ACTIVE = 1,
+    MOB_TEST = 2
+  } tMOBState;
+
   typedef struct {
     unsigned long when;
     tDataOrigin origin;
@@ -100,5 +106,15 @@ typedef struct {
     double destinationLongitude;
   } tNavigationData;
 
+  typedef struct {
+    unsigned long when;
+    tDataOrigin origin;
+    char mmsi[10];
+    double latitude;
+    double longitude;
+    double cog;
+    double sog;
+    tMOBState state;
+  } tMOBData;
 
 #endif

@@ -794,26 +794,89 @@ void PyPilot::sendVesselHeading(tNMEA2000 *NMEA2000)
 
     NMEA2000->SendMsg(N2kMsg);
 }
+
+/* NOTA
+
+    Els steeringMode estan recodificats per ser els que corresponen a Raymarine Evo. 
+    Raymarine fa servir el FollowUp per a Wind i TrackControl per a Nav.
+*/
 void PyPilot::sendHeadingTrackControl(tNMEA2000 *NMEA2000)
 {
    
     tN2kMsg N2kMsg;
     double radVesselHeading = state->heading.heading / 180.0 * 3.141592;
-    double radHeadingToSteer = state->headingCommandMagnetic.value / 180.0 * 3.141592;
 
+    tN2kSteeringMode steeringMode;
+    switch (state->mode.value)
+    {
+    case tPyPilotMode::compass:
+         steeringMode = tN2kSteeringMode::N2kSM_HeadingControl;   
 
-    SetN2kPGN127237(
+        break;
+    case tPyPilotMode::gps:
+        steeringMode = tN2kSteeringMode::N2kSM_HeadingControl; 
+        break;
+
+    case tPyPilotMode::wind:   
+        steeringMode = tN2kSteeringMode::N2kSM_FollowUpDevice; 
+        break;
+
+    case tPyPilotMode::trueWind:
+        steeringMode = tN2kSteeringMode::N2kSM_FollowUpDevice; 
+        break;
+
+    case tPyPilotMode::nav:
+        steeringMode = tN2kSteeringMode::N2kSM_TrackControl; 
+        break;
+    default:
+        steeringMode = tN2kSteeringMode::N2kSM_HeadingControl; 
+        break;
+    }   
+
+    if(!state->engaged.value) {
+        steeringMode = tN2kSteeringMode::N2kSM_MainSteering;
+    }
+  
+    if (state->mode.value == tPyPilotMode::wind)
+    {
+        double windHeadingToSteer = (state->heading.heading - state->apparentWindAngle.value + state->headingCommandMagnetic.value )/ 180.0 * 3.141592 ; 
+        SetN2kPGN127237(
         N2kMsg,
         N2kOnOff_Unavailable,     // RudderLimitExceeded
         N2kOnOff_Unavailable,     // OffHeadingLimitExceeded
         N2kOnOff_Unavailable,     // OffTrackLimitExceeded
         N2kOnOff_Unavailable,     // Override
-        N2kSM_Unavailable,            // SteeringMode
+        steeringMode,            // SteeringMode
+        tN2kTurnMode::N2kTM_RudderLimitControlled,            // TurnMode
+        N2khr_magnetic,                      // HeadingReference (True/Magnetic)
+        N2kRDO_Unavailable,           // CommandedRudderDirection
+        N2kDoubleNA,              // CommandedRudderAngle
+        windHeadingToSteer,           // HeadingToSteerCourse (radians)
+        N2kDoubleNA,              // Track
+        N2kDoubleNA,              // RudderLimit
+        N2kDoubleNA,              // OffHeadingLimit
+        N2kDoubleNA,              // RadiusOfTurnOrder
+        N2kDoubleNA,              // RateOfTurnOrder
+        N2kDoubleNA,              // OffTrackLimit
+        radVesselHeading          // VesselHeading (radians)
+    );
+    }
+    else
+    {
+        double radHeadingToSteer = state->headingCommandMagnetic.value / 180.0 * 3.141592;
+
+        SetN2kPGN127237(
+        N2kMsg,
+        N2kOnOff_Unavailable,     // RudderLimitExceeded
+        N2kOnOff_Unavailable,     // OffHeadingLimitExceeded
+        N2kOnOff_Unavailable,     // OffTrackLimitExceeded
+        N2kOnOff_Unavailable,     // Override
+        steeringMode ,            // SteeringMode
         N2kTM_Unavailable,            // TurnMode
         N2khr_magnetic,                      // HeadingReference (True/Magnetic)
         N2kRDO_Unavailable,           // CommandedRudderDirection
         N2kDoubleNA,              // CommandedRudderAngle
-        state->mode.value ==  tPyPilotMode::wind ? N2kDoubleNA : radHeadingToSteer,           // HeadingToSteerCourse (radians)
+        radHeadingToSteer,           // HeadingToSteerCourse (radians)
         N2kDoubleNA,              // Track
         N2kDoubleNA,              // RudderLimit
         N2kDoubleNA,              // OffHeadingLimit
@@ -821,7 +884,9 @@ void PyPilot::sendHeadingTrackControl(tNMEA2000 *NMEA2000)
         N2kDoubleNA,              // RateOfTurnOrder
         N2kDoubleNA,              // OffTrackLimit
         radVesselHeading             // VesselHeading (radians)
-    );
+        );
+    }
+    
 
     NMEA2000->SendMsg(N2kMsg);
 }

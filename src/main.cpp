@@ -662,6 +662,110 @@ void handleMagneticVariation(const tN2kMsg &N2kMsg)
 
   pypilot.setVariation(Variation, tDataOrigin::kNMEA2000);
 }
+void handleAISClassAPositionReport( const tN2kMsg &N2kMsg){
+
+
+uint8_t MessageID;
+tN2kAISRepeat Repeat;
+uint32_t UserID;
+double Latitude;
+double Longitude;
+bool Accuracy;
+bool RAIM;
+uint8_t Seconds;
+double COG;
+double SOG;
+double Heading;
+double ROT;
+tN2kAISNavStatus NavStatus;
+tN2kAISTransceiverInformation AISTransceiverInformation;
+uint8_t SID;
+
+char mmsi[10];
+
+  if (ParseN2kAISClassAPosition(N2kMsg, MessageID, Repeat, UserID, Latitude, Longitude, Accuracy, RAIM, Seconds, COG, SOG, Heading, ROT, NavStatus, AISTransceiverInformation, SID)){
+    if (NavStatus == tN2kAISNavStatus::N2kaisns_AIS_SART){
+      sprintf(mmsi, "%d", UserID);
+      if (strncmp(mmsi, "972", 3) == 0 && Seconds >= 0 && Seconds < 60 && Latitude > -90.0 && Latitude < 90.0 && Longitude > -180.0 && Longitude < 180.0){
+        if (pypilot.state->mobData.state == tMOBState::MOB_INACTIVE){ // We must add a new MOB
+          pypilot.state->mobData.state = tMOBState::MOB_TEST; // Always start in mode test till we receive a message 14 with MOB ACTIVE
+        }
+            pypilot.state->mobData.when = millis();
+            pypilot.state->mobData.origin = tDataOrigin::kNMEA2000;
+            strcpy(pypilot.state->mobData.mmsi, mmsi);
+            pypilot.state->mobData.latitude = Latitude;
+            pypilot.state->mobData.longitude = Longitude;
+            pypilot.state->mobData.cog = COG;
+            pypilot.state->mobData.sog = SOG;
+            
+        if (pypilot.state->mobData.state = tMOBState::MOB_ACTIVE){
+          // Compute heading to MOB
+          // We could use a Loxodromic approach as it shoueld be near
+          //Activate pypilot with locked heading to MOB if. not active, else send the new heading
+        }
+
+      // We consider the MOB a Test till we receive the new 
+
+      Serial.print("Received AIS SART from : ");
+      Serial.println(UserID);
+      Serial.print(" Lat: ");
+      Serial.println(Latitude,6);
+      Serial.print(" Lon: ");
+      Serial.println(Longitude,6);
+      Serial.print(" COG: ");
+      Serial.println(COG,2);
+      Serial.print(" SOG: ");
+      Serial.println(SOG,2);
+      Serial.print(" Heading: ");
+      Serial.println(Heading,2);
+      Serial.print(" ROT: ");
+      Serial.println(ROT,2);
+      Serial.println("---------------------------------------------------");
+      }
+    }
+  }
+}
+void handleAISSafetyRelatedBroadcastMessage(const tN2kMsg &N2kMsg)
+{
+
+  uint8_t MessageID;
+  tN2kAISRepeat Repeat;
+  uint32_t SourceID;
+  tN2kAISTransceiverInformation AISTransceiverInformation;
+  char * SafetyRelatedText;
+  size_t SafetyRelatedTextMaxSize;
+  char mmsi[10];
+
+  ParseN2kAISSafetyRelatedBroadcastMsg(N2kMsg, MessageID, Repeat, SourceID, AISTransceiverInformation, SafetyRelatedText, SafetyRelatedTextMaxSize);
+
+  if (pypilot.state->mobData.state != tMOBState::MOB_INACTIVE)
+  {
+    sprintf(mmsi, "%d", SourceID);
+    if (strncmp(mmsi, pypilot.state->mobData.mmsi, 9) == 0 && pypilot.state->mobData.state != tMOBState::MOB_INACTIVE) // Check if it is the same one we are working on
+    {
+      if (!strncmp(SafetyRelatedText, "MOB TEST", 8) == 0)
+      {
+        pypilot.state->mobData.state = tMOBState::MOB_TEST;
+      }
+      else if (!strncmp(SafetyRelatedText, "MOB ACTIVE", 10))
+      {
+        pypilot.state->mobData.state = tMOBState::MOB_ACTIVE;
+      }
+
+      pypilot.state->mobData.when = millis();
+      pypilot.state->mobData.origin = tDataOrigin::kNMEA2000;
+      
+
+      Serial.print("Received AIS Safety Related Broadcast Message from : ");
+      Serial.println(SourceID);
+      Serial.print(" Message: ");
+      Serial.println(SafetyRelatedText);
+      Serial.println("---------------------------------------------------");
+    }
+  }
+}
+
+
 
 void processKey(unsigned char key)
 {
@@ -831,6 +935,14 @@ void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
 
   case 129029:
     // Serial.println("Received GNSS/position (129029)");
+    break;
+
+  case 129038:
+    handleAISClassAPositionReport(N2kMsg);
+    break;
+
+  case 129802:
+    handleAISSafetyRelatedBroadcastMessage(N2kMsg);
     break;
 
   case 129283:

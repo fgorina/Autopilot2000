@@ -49,9 +49,10 @@ class tState {
         tNavigationData navigationData{when: 0, origin: tDataOrigin::NO_DATA, bearingReference: tN2kHeadingReference::N2khr_Unavailable, 
             bearingOriginToDestination: 0.0, bearingPositionToDestination: 0.0, destinationLatitude: 0.0, destinationLongitude: 0.0};
 
+        // MOB
 
-        
-
+        tMOBData mobData {when: 0, origin: tDataOrigin::NO_DATA, latitude: 0.0, longitude: 0.0, cog: 0.0, sog: 0.0, state: tMOBState::MOB_INACTIVE};
+            
         void printInfo();
 
       
