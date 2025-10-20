@@ -793,7 +793,7 @@ void processKey(unsigned char key)
   {
     pypilot.pypilot_send_mode(tPyPilotMode::wind);
     vTaskDelay(10);
-    pypilot.pypilot_send_command(pypilot.state->heading.heading);
+    //pypilot.pypilot_send_command(pypilot.state->heading.heading);
     pypilot.pypilot_send_engage();
     break;
   }
@@ -805,13 +805,26 @@ void processKey(unsigned char key)
   }
   case key_codes::KEY_PLUS_1:
   {
-    double command = pypilot.state->headingCommandMagnetic.value + 1.0;
+    double command = pypilot.state->headingCommandMagnetic.value;
+
+    if (pypilot.state->mode.value != tPyPilotMode::wind  || pypilot.state->mode.value != tPyPilotMode::trueWind) {
+      command -= 1.0;
+    }else {
+      command += 1.0;
+    }
+    
     pypilot.pypilot_send_command(command);
     break;
   }
   case key_codes::KEY_PLUS_10:
   {
-    double command = pypilot.state->headingCommandMagnetic.value + 10.0;
+     double command = pypilot.state->headingCommandMagnetic.value;
+
+    if (pypilot.state->mode.value != tPyPilotMode::wind  || pypilot.state->mode.value != tPyPilotMode::trueWind) {
+      command -= 10.0;
+    }else {
+      command += 10.0;
+    }
     pypilot.pypilot_send_command(command);
 
     break;
@@ -819,7 +832,13 @@ void processKey(unsigned char key)
 
   case key_codes::KEY_MINUS_1:
   {
-    double command = pypilot.state->headingCommandMagnetic.value - 1.0;
+     double command = pypilot.state->headingCommandMagnetic.value;
+
+    if (pypilot.state->mode.value != tPyPilotMode::wind  || pypilot.state->mode.value != tPyPilotMode::trueWind) {
+      command += 1.0;
+    }else {
+      command -= 1.0;
+    }
     pypilot.pypilot_send_command(command);
 
     break;
@@ -827,7 +846,13 @@ void processKey(unsigned char key)
 
   case key_codes::KEY_MINUS_10:
   {
-    double command = pypilot.state->headingCommandMagnetic.value - 10.0;
+     double command = pypilot.state->headingCommandMagnetic.value;
+
+    if (pypilot.state->mode.value != tPyPilotMode::wind  || pypilot.state->mode.value != tPyPilotMode::trueWind) {
+      command += 10.0;
+    }else {
+      command -= 10.0;
+    }
     pypilot.pypilot_send_command(command);
 
     break;
@@ -902,10 +927,8 @@ void handleKey(const tN2kMsg &N2kMsg)
 
 void HandleNMEA2000Msg(const tN2kMsg &N2kMsg)
 {
-
   switch (N2kMsg.PGN)
   {
-
   case 127245:
     // Serial.println("Received rudder angle info (127245  )");
     handleRudderCommand(N2kMsg);

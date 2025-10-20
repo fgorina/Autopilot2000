@@ -916,6 +916,15 @@ void PyPilot::sendLockedHeading(tNMEA2000 *NMEA2000)
     double radLockedHeadingTrue = state->headingCommandTrue.value / 180.0 * 3.141592;
     double radLockedHeadingMagnetic = state->headingCommandMagnetic.value / 180.0 * 3.141592;
 
+    if (radLockedHeadingTrue < 0)
+    {
+        radLockedHeadingTrue += 2.0 * PI;
+    }
+    if (radLockedHeadingMagnetic < 0)
+    {
+        radLockedHeadingMagnetic += 2.0 * PI;
+    }
+
     N2kMsg.AddByte(0x3B); // Raymarine, Marine
     N2kMsg.AddByte(0x47);
 
@@ -934,14 +943,16 @@ void PyPilot::sendWindDatum(tNMEA2000 *NMEA2000){
    // En principi, PyPilot posa l'angle del vent automaticament
     tN2kMsg N2kMsg;
     N2kMsg.SetPGN(65345);
-    double radLockedHeadingTrue = state->apparentWindAngle.value / 180.0 * PI;
-    double radLockedHeadingMagnetic = state->heading.heading / 180.0 * PI;
+    double radLockedHeading = state->headingCommandMagnetic.value / 180.0 * PI;
+    if(radLockedHeading < 0){
+        radLockedHeading += 2.0 * PI;
+    }   
 
     N2kMsg.AddByte(0x3B); // Raymarine, Marine
     N2kMsg.AddByte(0x47);
 
-    N2kMsg.Add2ByteDouble(radLockedHeadingMagnetic, 0.0001);        // Wind Datum
-    N2kMsg.Add2ByteDouble(radLockedHeadingMagnetic, 0.0001);    // Rolling Average Wind Angle
+    N2kMsg.Add2ByteDouble(radLockedHeading, 0.0001);        // Wind Datum
+    N2kMsg.Add2ByteDouble(radLockedHeading, 0.0001);    // Rolling Average Wind Angle
 
     N2kMsg.AddByte(0); // Reserved
 
