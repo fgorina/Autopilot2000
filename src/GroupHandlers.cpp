@@ -277,7 +277,8 @@ bool tN2kGroupFunctionHandlerForPGN127245::HandleRequest(const tN2kMsg &N2kMsg,
   // Send delayed - there was problems with test tool with too fast response.
   // Must Send PGN
 
-  pypilot->sendVesselHeading(pNMEA2000); // perhaps use iDev as second parameter???
+  pypilot->sendRudder(pNMEA2000); // perhaps use iDev as second parameter???
+  //pypilot->sendVesselHeading(pNMEA2000); // perhaps use iDev as second parameter???
   Serial.print("Requested every "); Serial.println(TransmissionInterval);
 
   return true;
@@ -599,13 +600,8 @@ bool tN2kGroupFunctionHandlerForPGN65345::HandleRequest(const tN2kMsg &N2kMsg,
           N2kMsg.Get2ByteDouble(0.0001, Index);
           break;
         }
-        case N2kPGN65360_TargetHeadingMagnetic_field:
-        {
-          N2kMsg.Get2ByteDouble(0.0001, Index);
-          break;
-        }
 
-        case N2kPGN65379_Reserved_field_1:
+        case N2kPGN65345_Reserved_field_1:
         {
           N2kMsg.GetByte(Index);
           break;
