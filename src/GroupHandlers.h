@@ -127,13 +127,14 @@ class tN2kGroupFunctionHandlerForPGN65360 : public tN2kGroupFunctionHandler {
 
 class tN2kGroupFunctionHandlerForPGN65345 : public tN2kGroupFunctionHandler {
   protected:
-    virtual bool HandleRequest(const tN2kMsg &N2kMsg, 
-                               uint32_t TransmissionInterval, 
-                               uint16_t TransmissionIntervalOffset, 
+    virtual bool HandleRequest(const tN2kMsg &N2kMsg,
+                               uint32_t TransmissionInterval,
+                               uint16_t TransmissionIntervalOffset,
                                uint8_t  NumberOfParameterPairs,
                                int iDev);
-  
-  PyPilot* pypilot; 
+    virtual bool HandleCommand(const tN2kMsg &N2kMsg, uint8_t PrioritySetting, uint8_t NumberOfParameterPairs, int iDev);
+
+  PyPilot* pypilot;
   public:
     tN2kGroupFunctionHandlerForPGN65345(tNMEA2000 *_pNMEA2000, PyPilot *_pypilot) : tN2kGroupFunctionHandler(_pNMEA2000,65345),pypilot(_pypilot){}
 };

@@ -647,4 +647,80 @@ bool tN2kGroupFunctionHandlerForPGN65345::HandleRequest(const tN2kMsg &N2kMsg,
   return true;
 }
 
+bool tN2kGroupFunctionHandlerForPGN65345::HandleCommand(const tN2kMsg &N2kMsg, uint8_t PrioritySetting, uint8_t NumberOfParameterPairs, int iDev)
+{
+  int i;
+  int Index;
+  uint8_t field;
+  double windDatum = 0.0;
+
+  tN2kGroupFunctionTransmissionOrPriorityErrorCode pec = N2kgfTPec_Acknowledge;
+  tN2kGroupFunctionParameterErrorCode PARec;
+  bool MatchFilter = true;
+  tN2kMsg N2kRMsg;
+  Serial.println("Received Wind Datum command");
+  SetStartAcknowledge(N2kRMsg, N2kMsg.Source, PGN,
+                      N2kgfPGNec_Acknowledge,
+                      pec,
+                      NumberOfParameterPairs);
+
+  if (PrioritySetting != 8)
+    pec = N2kgfTPec_TransmitIntervalOrPriorityNotSupported;
+  StartParseCommandPairParameters(N2kMsg, Index);
+  for (i = 0; i < NumberOfParameterPairs; i++)
+  {
+    field = N2kMsg.GetByte(Index);
+    PARec = N2kgfpec_Acknowledge;
+    switch (field)
+    {
+    case N2kPGN65345_ManufacturerCode_field:
+    {
+      MatchRequestField(N2kMsg.Get2ByteUInt(Index), (uint16_t)MANUFACTURER_RAYMARINE, (uint16_t)0x3fff, MatchFilter, PARec);
+      break;
+    }
+    case N2kPGN65345_Reserved_field:
+      break;
+    case N2kPGN65345_IndustryCode_field:
+    {
+      MatchRequestField(N2kMsg.GetByte(Index), (uint8_t)INDUSTRY_MARINE, (uint8_t)0x07, MatchFilter, PARec);
+      break;
+    }
+    case N2kPGN65345_WindDatum_field:
+    {
+      windDatum = N2kMsg.Get2ByteDouble(0.0001, Index);
+      break;
+    }
+    case N2kPGN65345_RollingAvgWindAngle_field:
+    {
+      N2kMsg.Get2ByteDouble(0.0001, Index);
+      break;
+    }
+    case N2kPGN65345_Reserved_field_1:
+    {
+      N2kMsg.GetByte(Index);
+      break;
+    }
+    default:
+    {
+      PARec = N2kgfpec_InvalidRequestOrCommandParameterField;
+    }
+    }
+    AddAcknowledgeParameter(N2kRMsg, i, PARec);
+  }
+
+  pNMEA2000->SendMsg(N2kRMsg, iDev);
+
+  if (PARec == N2kgfpec_Acknowledge)
+  {
+    // Convert 0-2Pi radians to +/-180 degrees (AWA convention used by PyPilot)
+    double awa = windDatum * 180.0 / PI;
+    if (awa > 180.0) awa -= 360.0;
+    Serial.print("Setting wind datum AWA to ");
+    Serial.println(awa);
+    pypilot->setWindDatum(awa, tDataOrigin::kNMEA2000);
+  }
+
+  return true;
+}
+
 #endif

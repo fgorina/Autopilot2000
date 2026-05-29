@@ -1,0 +1,39 @@
+The nav flow works, but has specific problems
+Bug 1: Source filter is hardcoded and fragile
+cpp// Line 456
+if (N2kMsg.Source != SOURCE || ...)  // SOURCE = 15
+N2K source addresses are claimed dynamically. If Orca restarts and claims a different address, nav mode silently stops working with no error. You should either remove the source filter or store Orca's address dynamically from pN2kDeviceList.
+
+Bug 2: gps→nav auto-promotion uses wrong DataOrigin
+cpp// Line 498-502
+if (pypilot.state->mode.value == tPyPilotMode::gps && DestinationLatitude != -1000000000.0)
+{
+    pypilot.setPypilotMode(tPyPilotMode::nav, tDataOrigin::PYPILOT);  // ← wrong origin
+}
+The trigger is NMEA2000 data, not pypilot. Using tDataOrigin::PYPILOT causes setPypilotMode() to skip sending the mode change to pypilot (the from != PYPILOT branch). So pypilot never gets told it's in gps/nav mode from this path.
+
+Bug 3: handleHeadingTrackControl ignores incoming 127237 entirely
+cppvoid handleHeadingTrackControl(const tN2kMsg &N2kMsg)
+{
+    if (!verbose && !testNav) { return; }  // ← always returns in normal operation
+    // just prints
+}
+PGN 127237 from Orca carries HeadingToSteerCourse — this is a second valid source for the course to steer, parallel to your 129284 path. Currently you ignore it completely. For now that's OK since 129284 works, but if Orca ever sends 127237 commands instead of 129284 (e.g. in some nav modes), you'll get nothing. Worth noting for later.
+
+Bug 4: handleKey() — assignment in condition
+cppif (manufacturer = AutopilotManufacturerCode)  // ← = instead of ==
+Always true. Raymarine manufacturer check is effectively disabled.
+
+Bug 5: KEY_PLUS/MINUS conditions always take the same branch
+cppif (pypilot.state->mode.value != tPyPilotMode::wind || 
+    pypilot.state->mode.value != tPyPilotMode::trueWind)
+|| here means the condition is always true — a value can't simultaneously equal both enums, so one of the two != is always true. The else (wind mode branch) is dead code. Should be &&. Affects all four key cases.
+
+Bug 6: MOB — assignment in condition
+cppif (pypilot.state->mobData.state = tMOBState::MOB_ACTIVE)  // ← = instead of ==
+Always assigns and evaluates as true. MOB_ACTIVE branch always executes.
+
+Nav mode summary
+The 129284 → BearingPositionToDestination → setCommandHeadingTrue() → pypilot_send_command(trueHeading) pipeline is conceptually correct. Orca always sends true bearing in 129284, pypilot gps mode uses true heading for ap.heading_command. The conversion chain through setCommandHeadingTrue() is correct.
+The two things actually worth fixing for reliable nav operation are Bug 1 (source address) and Bug 2 (DataOrigin on the gps→nav promotion). Everything else is a correctness bug but won't stop nav from working in your current setup.
+Do you want to tackle the dynamic source address tracking, or discuss the 127237 path first?

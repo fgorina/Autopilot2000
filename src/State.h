@@ -15,6 +15,9 @@ class tState {
     
     public:
 
+
+        bool navModePP = true;  // true: PP native nav (ap.track + ap.xte); false: gps mode + heading command
+
         // Wind Data -- For the moment only use the apparent. I don't understant very well the truee of Pypilot
 
         tDoubleData apparentWindSpeed {when: 0, origin: tDataOrigin::NO_DATA, value:0.0}; // In m/s
@@ -32,6 +35,7 @@ class tState {
         tBoolData engaged {when: 0, origin: tDataOrigin::NO_DATA, value: false};   // ap.enabled
         tDoubleData headingCommandTrue {when: 0, origin: tDataOrigin::NO_DATA, value:0.0}; //In degrees
         tDoubleData headingCommandMagnetic {when: 0, origin: tDataOrigin::NO_DATA, value:0.0};    // ap.heading_command In degrees
+        tDoubleData windDatum {when: 0, origin: tDataOrigin::NO_DATA, value:0.0};               // Wind datum (target AWA) In degrees (+/- 180)
         tRudderCommandData rudderCommand {when: 0, origin: tDataOrigin::NO_DATA,  direction: tN2kRudderDirectionOrder::N2kRDO_NoDirectionOrder , command: 0.0};
 
         tTackStateData tackState {when: 0, origin: tDataOrigin::NO_DATA, value: tTackState::TACK_NONE}; //ap.tack.state

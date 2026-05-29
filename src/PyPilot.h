@@ -63,6 +63,7 @@ public:
         void setPypilotMode(tPyPilotMode mode, tDataOrigin from);
         void setCommandHeadingMagnetic(double heading, tDataOrigin from);
         void setCommandHeadingTrue(double heading, tDataOrigin from);
+        void setWindDatum(double awa, tDataOrigin from);
         void setTackState(tTackState tackSt, tDataOrigin from);
         void setTackDirection(tTackDirection direction, tDataOrigin from);
 
@@ -83,6 +84,8 @@ public:
     void pypilot_send_tack();
     void pypilot_send_cancel_tack();
     void pypilot_send_mode(tPyPilotMode mode);
+    void pypilot_send_track(double bearing);
+    void pypilot_send_xte(double xte);
     void pypilot_begin(String ssid, String pwd, IPAddress host = IPAddress(0,0, 0,0), int port = 0);
     void setKeepAlive();
     void disconnect_clients();

@@ -145,14 +145,33 @@ void PyPilot::pypilot_send_mode(tPyPilotMode mode)
                  break;
            
            case tPyPilotMode::nav:
-                // Send compass. Orca or Nav Computer sends headings that are converted
-                // to magnetic headings. Seems to work best
-
-                 pypClient.c.println("ap.mode=\"gps\"");
+                 if (state->navModePP) {
+                     pypClient.c.println("ap.mode=\"nav\"");
+                 } else {
+                     pypClient.c.println("ap.mode=\"gps\"");
+                 }
                  break;
 
         }
         //PACO pypClient.c.flush();
+    }
+}
+
+void PyPilot::pypilot_send_track(double bearing)
+{
+    if (isConnected())
+    {
+        pypClient.c.print("ap.track=");
+        pypClient.c.println(bearing, 1);
+    }
+}
+
+void PyPilot::pypilot_send_xte(double xte)
+{
+    if (isConnected())
+    {
+        pypClient.c.print("ap.xte=");
+        pypClient.c.println(xte/1852.0, 5);
     }
 }
 
@@ -172,9 +191,10 @@ void PyPilot::pypilot_send_mode(tPyPilotMode mode)
         setHeading(newHeading, tN2kHeadingReference::N2khr_magnetic, tDataOrigin::PYPILOT);
         
       } else if (dataFeed.startsWith("ap.heading_command=")) {
-        double oldCommand = state->headingCommandMagnetic.value;
         double newCommand = strtof(dataFeed.substring(strlen("ap.heading_command="), dataFeed.length()).c_str(), NULL);
-        if(state->mode.value != tPyPilotMode::nav){
+        if(state->mode.value == tPyPilotMode::wind){
+            setWindDatum(newCommand, tDataOrigin::PYPILOT);
+        }else if(state->mode.value != tPyPilotMode::nav){
             setCommandHeadingMagnetic(newCommand, tDataOrigin::PYPILOT);
         }else{
             setCommandHeadingTrue(newCommand, tDataOrigin::PYPILOT);
@@ -531,7 +551,7 @@ void PyPilot::setRaymarineMode(tRaymarineMode rmode, tDataOrigin from)
     if (rmode == tRaymarineMode::Standby)
     {
        
-        if (state->mode.value == tPyPilotMode::nav){  // nav mode does not really exist
+        if (state->mode.value == tPyPilotMode::nav && !state->navModePP){
             state->mode.value = tPyPilotMode::gps;
             state->mode.origin = tDataOrigin::kNMEA2000;
             state->mode.when = millis();
@@ -671,6 +691,24 @@ void PyPilot::setServoPosition(double position, tDataOrigin from)
     state->servoPosition.value = position;
     state->servoPosition.origin = from;
     state->servoPosition.when = millis();
+}
+
+void PyPilot::setWindDatum(double awa, tDataOrigin from)
+{
+    state->windDatum.value = awa;
+    state->windDatum.origin = from;
+    state->windDatum.when = millis();
+
+    if (from != tDataOrigin::PYPILOT && state->mode.value == tPyPilotMode::wind)
+    {
+        Serial.print("Sending wind datum to pypilot: ");
+        Serial.println(awa);
+        pypilot_send_command(awa);
+    }
+    else if (from == tDataOrigin::PYPILOT)
+    {
+        sendWindDatum(nmea2000);
+    }
 }
 
 // Here we set the command to pypilot
@@ -937,29 +975,23 @@ void PyPilot::sendLockedHeading(tNMEA2000 *NMEA2000)
     NMEA2000->SendMsg(N2kMsg);
 }
 void PyPilot::sendWindDatum(tNMEA2000 *NMEA2000){
-
-   // Serial.print("Sending datum  heading of ");
-   // Serial.println(state->headingCommandMagnetic.value);
-   // En principi, PyPilot posa l'angle del vent automaticament
     tN2kMsg N2kMsg;
     N2kMsg.SetPGN(65345);
-    double radLockedHeading = state->headingCommandMagnetic.value / 180.0 * PI;
-    if(radLockedHeading < 0){
-        radLockedHeading += 2.0 * PI;
-    }   
+    double radWindDatum = state->windDatum.value / 180.0 * PI;
+    if(radWindDatum < 0){
+        radWindDatum += 2.0 * PI;
+    }
 
     N2kMsg.AddByte(0x3B); // Raymarine, Marine
     N2kMsg.AddByte(0x47);
 
-    N2kMsg.Add2ByteDouble(radLockedHeading, 0.0001);        // Wind Datum
-    N2kMsg.Add2ByteDouble(radLockedHeading, 0.0001);    // Rolling Average Wind Angle
+    N2kMsg.Add2ByteDouble(radWindDatum, 0.0001);    // Wind Datum
+    N2kMsg.Add2ByteDouble(radWindDatum, 0.0001);    // Rolling Average Wind Angle
 
     N2kMsg.AddByte(0); // Reserved
 
     NMEA2000->SendMsg(N2kMsg);
-
-
-}   
+}
 
 // Task function!!!
 
