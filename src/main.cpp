@@ -495,37 +495,23 @@ if (testNav ){
     Serial.println(WaypointClosingVelocity);
     Serial.println("------------------------------------------------------------------------------");
 }
-    if (DestinationLatitude == -1000000000.0) return;
+ if (pypilot.state->mode.value == tPyPilotMode::gps && DestinationLatitude != -1000000000.0)
+ {
+    pypilot.setPypilotMode(tPyPilotMode::nav, tDataOrigin::PYPILOT);
 
-    if (pypilot.state->navModePP)
-    {
-      if (pypilot.state->mode.value == tPyPilotMode::nav)
-      {
-        double bearing = BearingOriginToDestinationWaypoint * 180.0 / PI;
-        if (BearingReference == tN2kHeadingReference::N2khr_true)
-        {
-          bearing -= pypilot.state->variation.value;
-        }
-        pypilot.pypilot_send_track(bearing);
-      }
-    }
-    else
-    {
-      if (pypilot.state->mode.value == tPyPilotMode::gps)
-      {
-        pypilot.setPypilotMode(tPyPilotMode::nav, tDataOrigin::PYPILOT);
-      }
+ }
 
-      if (pypilot.state->mode.value == tPyPilotMode::nav)
+    if (pypilot.state->mode.value == tPyPilotMode::nav &&  DestinationLatitude != -1000000000.0)
+    {
+      if (BearingReference == tN2kHeadingReference::N2khr_magnetic)
       {
-        if (BearingReference == tN2kHeadingReference::N2khr_magnetic)
-        {
-          pypilot.setCommandHeadingMagnetic(BearingPositionToDestinationWaypoint, tDataOrigin::kNMEA2000);
-        }
-        else
-        {
-          pypilot.setCommandHeadingTrue(BearingPositionToDestinationWaypoint, tDataOrigin::kNMEA2000);
-        }
+        pypilot.setCommandHeadingMagnetic(BearingPositionToDestinationWaypoint, tDataOrigin::kNMEA2000);
+        //pypilot.sendLockedHeading(&NMEA2000);
+      }
+      else
+      { // True
+        pypilot.setCommandHeadingTrue(BearingPositionToDestinationWaypoint, tDataOrigin::kNMEA2000);
+        //pypilot.sendLockedHeading(&NMEA2000);PACO TEST
       }
     }
   }
@@ -540,9 +526,21 @@ void handleXTE(const tN2kMsg &N2kMsg)
 
   if (ParseN2kXTE(N2kMsg, SID, XTEMode, NavigationTerminated, XTE))
   {
-    if (N2kMsg.Source == SOURCE && pypilot.state->navModePP && pypilot.state->mode.value == tPyPilotMode::nav)
+
+    if (testNav && N2kMsg.Source ==  SOURCE && false)
     {
-      pypilot.pypilot_send_xte(XTE);
+      Serial.print("Received XTE  Packet (129283)");
+      Serial.print(" from: ");
+      Serial.println(N2kMsg.Source);
+      Serial.print("    SID: ");
+      Serial.println(SID);
+      Serial.print("    XTEMode: ");
+      Serial.println(xTEModeValues[XTEMode]);
+      Serial.print("    NavigationTerminated: ");
+      Serial.println(NavigationTerminated);
+      Serial.print("    XTE: ");
+      Serial.println(XTE);
+      Serial.println("------------------------------------------------------------------------------");
     }
   }
 }
@@ -700,7 +698,7 @@ char mmsi[10];
             pypilot.state->mobData.cog = COG;
             pypilot.state->mobData.sog = SOG;
             
-        if (pypilot.state->mobData.state == tMOBState::MOB_ACTIVE){
+        if (pypilot.state->mobData.state = tMOBState::MOB_ACTIVE){
           // Compute heading to MOB
           // We could use a Loxodromic approach as it shoueld be near
           //Activate pypilot with locked heading to MOB if. not active, else send the new heading
@@ -897,7 +895,7 @@ void handleKey(const tN2kMsg &N2kMsg)
 
   Serial.print("Manufacturer for 12720 : ");
   Serial.println(manufacturer);
-  if (manufacturer == AutopilotManufacturerCode)
+  if (manufacturer = AutopilotManufacturerCode)
   {
     propietaryCode = N2kMsg.Get2ByteUInt(Index);
     Serial.print("Propietary Code ");
