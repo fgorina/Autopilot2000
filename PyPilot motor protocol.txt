@@ -1,0 +1,96 @@
+Good news — the C++ implementation already exists in arduino_servo.cpp and arduino_servo.h. Here's the full protocol documented from the source:
+
+Packet format
+Every packet (both directions) is 4 bytes:
+
+
+[code] [value_low] [value_high] [crc8]
+CRC8 init value 0xFF, computed over the first 3 bytes using the table at arduino_servo.cpp:24.
+
+Host → Arduino (commands)
+Code	Name	Value
+0xc7	COMMAND	(command+1)*1000, command in -1.0..1.0 → value 0..2000
+0xe7	RESET	0
+0x68	DISENGAGE	0
+0x1e	MAX_CURRENT	raw amps (from eeprom)
+0xa4	MAX_CONTROLLER_TEMP	°C
+0x5a	MAX_MOTOR_TEMP	°C
+0x2b	RUDDER_MIN	round((rudder_min + 0.5) * 65472)
+0x4d	RUDDER_MAX	round((rudder_max + 0.5) * 65472)
+0x71	MAX_SLEW	max_slew_slow<<8 | max_slew_speed
+0x36	CLUTCH_PWM_AND_BRAKE	clutch_pwm | (brake ? 256 : 0)
+0x91	EEPROM_READ	addr | end<<8
+0x53	EEPROM_WRITE	addr | value<<8
+0x19	REPROGRAM	0
+Arduino → Host (telemetry)
+Code	Name	Decoding
+0x1c	CURRENT	value / 100.0 amps
+0xb3	VOLTAGE	value / 100.0 volts
+0xf9	CONTROLLER_TEMP	(int16_t)value / 100.0 °C
+0x48	MOTOR_TEMP	(int16_t)value / 100.0 °C
+0xa7	RUDDER_SENSE	value/65472.0 - 0.5 (–0.5..+0.5), 65535 = NaN
+0x8f	FLAGS	bitfield (see below)
+0x9a	EEPROM_VALUE	buf[1]=addr, buf[2]=value
+Flags bitfield:
+
+
+SYNC              = 0x01
+OVERTEMP_FAULT    = 0x02
+OVERCURRENT_FAULT = 0x04
+ENGAGED           = 0x08
+INVALID           = 0x10
+PORT_PIN_FAULT    = 0x20
+STARBOARD_PIN_FAULT = 0x40
+Sync/init sequence
+Send 0xFF 0xFF 0xFF 0xFF to force the Arduino to unsync
+Discard incoming packets until 2 consecutive valid CRC packets are received (in_sync_count >= 2)
+Only then process telemetry — wait for SYNC flag set before sending motor commands
+The C++ code is already portable enough to drop into an ESP32 project — you just need to replace the read()/write(fd, ...) calls with your UART HAL.
+
+arduino_servo.h
+Perfect, probably will have to adapt voltages from 5 / 3.3 but must look at the motor controller schema
+Let me check if there's any hardware schematic or motor controller documentation in the repo.
+
+Bash Find schematics or hardware docs in the repo
+IN
+find /Users/fgorina/development/pypilot -name "*.sch" -o -name "*.kicad*" -o -name "*.brd" -o -name "*.pdf" -o -name "*.md" | grep -iv "node_modules\|__pycache__" | head -30
+
+OUT
+/Users/fgorina/development/pypilot/README.md
+Bash Find Arduino sketch files
+IN
+find /Users/fgorina/development/pypilot -name "*.ino" -o -name "*.c" | grep -iv "__pycache__" | head -20
+
+OUT
+/Users/fgorina/development/pypilot/arduino/rudderfeedback/rudder.ino
+/Users/fgorina/development/pypilot/arduino/weathersensors/weathersensors.ino
+/Users/fgorina/development/pypilot/arduino/weathersensors/twi.c
+/Users/fgorina/development/pypilot/arduino/rfremote/wiring.c
+/Users/fgorina/development/pypilot/arduino/rfremote/rfremote.ino
+/Users/fgorina/development/pypilot/arduino/motor/motor.ino
+/Users/fgorina/development/pypilot/arduino/hat/wiring.c
+/Users/fgorina/development/pypilot/arduino/hat/hat.ino
+/Users/fgorina/development/pypilot/hat/ugfx/modugfx.c
+Read motor.ino
+The Arduino firmware at motor.ino:385 reveals the key hardware detail you need:
+
+
+Serial.begin(38400 * DIV_CLOCK);
+Where DIV_CLOCK at motor.ino:128 defaults to 4 (recommended). So the baud rate is 153,600 — not a standard rate. If your motor controller was compiled with DIV_CLOCK=2 it's 76,800.
+
+The voltage issue
+The critical problem for ESP32 integration:
+
+Direction	Voltage	Safe?
+ESP32 TX (3.3V) → Arduino RX	3.3V as HIGH	✅ Arduino treats ≥2V as HIGH
+Arduino TX (5V) → ESP32 RX	5V	❌ ESP32 GPIO max is 3.6V
+The Arduino runs all its UART at 5V logic. You will need a level shifter or a simple voltage divider (e.g. 1kΩ + 2kΩ) on the Arduino TX → ESP32 RX line.
+
+What to check on the schematic
+Does the board have optical isolation? — The comment at motor.ino:98 says "If used with optical isolation (strongly recommended)". If isolation is fitted, the logic levels on the isolated side may already be 3.3V-friendly depending on the optocoupler's output stage.
+Which DIV_CLOCK — determines baud rate, check the fuse settings or the compiled firmware version.
+Is there already a UART buffer/driver between the Arduino and the external connector? Some pypilot motor driver boards have RS-422 or optocouplers on the serial lines.
+The C++ host code (arduino_servo.cpp) is already clean and portable — once you handle the baud rate and level shifting, porting to ESP32 is just replacing read()/write(fd, ...) with your UART calls.
+
+
+Speed seems to b e 38400.
